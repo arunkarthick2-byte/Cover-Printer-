@@ -1,22 +1,108 @@
 {
-  "name": "Courier Cover Printer",
-  "short_name": "CoverPrinter",
-  "description": "B2B Logistics & Courier Envelope Printing Tool",
-  "start_url": "./index.html",
+  "id": "/",
+  "name": "SOLLO ERP Enterprise",
+  "short_name": "SOLLO",
+  "description": "Professional Accounting, Billing, and Inventory Management System",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#F3F4F6",
-  "theme_color": "#0A56D9",
-  "orientation": "portrait-primary",
+  "display_override": ["window-controls-overlay", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#0061a4",
+  "theme_color": "#0061a4",
+  "categories": ["business", "finance", "productivity"],
+  "lang": "en",
+  "dir": "ltr",
+  "scope": "/",
+  "iarc_rating_id": "",
+  "prefer_related_applications": false,
+  "related_applications": [],
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Sales Invoice",
+      "short_name": "New Sale",
+      "description": "Create a new Sales Invoice",
+      "url": "/?action=new_sale",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Open Cashbook",
+      "short_name": "Cashbook",
+      "description": "Open Cashbook & Banking",
+      "url": "/?action=cashbook",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/",
+      "accept": {
+        "application/json": [".json"]
+      }
+    }
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+sollo",
+      "url": "/?open=%s"
+    }
+  ],
+  "widgets": [],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "note_taking": {
+    "new_note_url": "/"
+  }
 }

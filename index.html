@@ -1,390 +1,1551 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta name="color-scheme" content="light">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" id="meta-theme-color" content="#0061a4">
+    <title>SOLLO ERP</title>
     
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0A56D9">
-    
-    <title>Courier Cover Printer</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet" />
-    
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-
-    <style>
-        /* Completely hides the app until fully loaded to prevent raw text flashing */
-        .app-wrapper { display: none; }
-        body.app-loaded .app-wrapper { display: block; }
-        
-        #splash-screen {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: #0A56D9; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; z-index: 99999; color: white;
-            transition: opacity 0.3s ease-out;
-        }
-        .splash-title { font-family: 'Roboto', sans-serif; font-size: 28px; font-weight: 700; margin-top: 16px; letter-spacing: 0.5px; }
-        .spinner {
-            width: 40px; height: 40px; margin-top: 30px; border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        body.app-loaded #splash-screen { opacity: 0; pointer-events: none; }
-    </style>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            let splashRemoved = false;
-            const hideSplash = () => {
-                if (splashRemoved) return;
-                splashRemoved = true;
-                document.body.classList.add('app-loaded');
-                setTimeout(() => {
-                    const splash = document.getElementById('splash-screen');
-                    if (splash) splash.remove();
-                }, 300); 
-            };
-            window.addEventListener('load', hideSplash);
-            setTimeout(hideSplash, 1500); // 1.5s forced override
-        });
-    </script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="manifest" href="/manifest.json">
 </head>
+
 <body>
 
-    <div id="splash-screen">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="white">
-            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-        </svg>
-        <div class="splash-title">Cover Printer</div>
-        <div class="spinner"></div>
+    <div id="splash-screen" class="splash-screen">
+        <div class="logo-circle-large" style="margin-bottom: 24px;">
+            <svg xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 -960 960 960" width="48" fill="white">
+                <path d="M160-120v-720h320v160h320v560H160Zm80-80h160v-80H240v80Zm0-160h160v-80H240v80Zm0-160h160v-80H240v80Zm240 320h240v-400H480v400Zm80-240h80v-80h-80v80Zm0 160h80v-80h-80v80Z"/>
+            </svg>
+        </div>
+        <h1 style="color: white; margin: 0; font-size: 24px;">SOLLO ERP</h1>
+        <p style="color: rgba(255,255,255,0.8); margin-top: 8px;">Loading Database...</p>
+        <div class="loader-spinner" style="margin-top: 32px;"></div>
     </div>
-    
-    <div class="app-wrapper">
-        
-        <header class="app-header">
-            <div class="header-title">
-                <span class="material-symbols-rounded">mark_email_unread</span>
-                Cover Printer
+    <div id="side-drawer-overlay" class="drawer-overlay hidden" onclick="UI.toggleDrawer()"></div>
+    <div id="side-drawer" class="side-drawer">
+        <div class="drawer-header">
+            <div class="logo-circle"><span class="material-symbols-outlined" style="color: white; font-size: 32px;">domain</span></div>
+            <div style="margin-left: 16px;">
+                <div style="color: white; font-weight: bold; font-size: 18px;">SOLLO ERP</div>
+                <div style="color: rgba(255,255,255,0.8); font-size: 14px;">Enterprise Edition</div>
             </div>
-            <div class="header-actions">
-                <button id="view-ledger-btn" class="icon-btn" aria-label="History">
-                    <span class="material-symbols-rounded">history</span>
-                </button>
-                <button id="manage-clients-btn" class="icon-btn" aria-label="Address Book">
-                    <span class="material-symbols-rounded">contacts</span>
-                </button>
-            </div>
-        </header>
-
-        <main class="app-content">
+        </div>
+        <div style="padding: 16px 0; flex: 1; overflow-y: auto;">
+            <div class="drawer-item" onclick="UI.toggleDrawer(); UI.openActivity('activity-business-profile')"><span class="material-symbols-outlined">storefront</span>Business Profile</div>
             
-            <div class="md-card">
-                <div class="card-title-wrap mb-4">
-                    <span class="material-symbols-rounded icon-primary">person</span>
-                    <h3 class="card-title">Recipient Details</h3>
+            <div class="drawer-item" onclick="UI.toggleDrawer(); app.openGSTReport()"><span class="material-symbols-outlined">request_quote</span>GST Reports</div>
+            <div class="drawer-item" onclick="UI.toggleDrawer(); UI.openActivity('activity-advanced-reports'); UI.renderDayBook();"><span class="material-symbols-outlined">analytics</span>Advanced Reports</div>
+            
+            <div class="drawer-item" onclick="UI.toggleDrawer(); UI.switchTab('tab-dashboard', 'Dashboard', document.getElementById('nav-dash'))"><span class="material-symbols-outlined">dashboard</span>Dashboard</div>
+            <div class="drawer-item" onclick="UI.toggleDrawer(); UI.openMasterView('products', 'Inventory Master')"><span class="material-symbols-outlined">inventory_2</span>Products / Inventory</div>
+            <div class="drawer-item" onclick="UI.toggleDrawer(); UI.openMasterView('customers', 'Customer Master')"><span class="material-symbols-outlined">groups</span>Customers / Receivables</div>
+            <div class="drawer-item" onclick="UI.toggleDrawer(); UI.openMasterView('suppliers', 'Supplier Master')"><span class="material-symbols-outlined">local_shipping</span>Suppliers / Payables</div>
+            
+            <div class="drawer-item" onclick="UI.toggleDrawer(); UI.switchTab('tab-expenses', 'Expense Ledger', null)"><span class="material-symbols-outlined">receipt</span>Expense Ledger</div>
+            
+            <div style="height: 1px; background: var(--md-surface-variant); margin: 16px 0;"></div>
+            
+            <div class="drawer-item" onclick="UI.toggleDrawer(); app.refreshAll()"><span class="material-symbols-outlined" style="color: var(--md-primary);">refresh</span>Refresh Data</div>
+            
+            <div style="padding: 16px 24px 8px 24px; font-size: 12px; font-weight: bold; color: var(--md-primary); text-transform: uppercase; letter-spacing: 1px;">Data Management</div>
+            
+            <div style="padding: 8px 24px 8px 24px; font-size: 11px; font-weight: bold; color: var(--md-text-muted); text-transform: uppercase; letter-spacing: 1px;" id="cloud-status">Loading Cloud...</div>
+            <div class="drawer-item" onclick="UI.toggleDrawer(); Cloud.backup()"><span class="material-symbols-outlined" style="color: var(--md-primary);">cloud_upload</span>Backup to Drive</div>
+            <div class="drawer-item" onclick="UI.toggleDrawer(); Cloud.restore()"><span class="material-symbols-outlined" style="color: var(--md-error);">cloud_download</span>Restore from Drive</div>
+
+            <hr style="border: 0; border-top: 1px solid var(--md-outline-variant); margin: 8px 0;">
+            
+            <div class="drawer-item" onclick="UI.toggleDrawer(); UI.openMasterView('trash', 'Recycle Bin')"><span class="material-symbols-outlined" style="color: var(--md-error);">delete</span>Recycle Bin</div>
+
+            <div class="drawer-item" onclick="UI.toggleDrawer(); window.Utils.exportData()"><span class="material-symbols-outlined">security</span>Manual Export (Local)</div>
+            <div class="drawer-item" onclick="UI.toggleDrawer(); document.getElementById('import-file').click()"><span class="material-symbols-outlined">restore</span>Manual Restore (Local)</div>
+            
+            <input type="file" id="import-file" style="display:none;" accept=".json" onchange="window.Utils.importData(event)">
+
+            <div style="padding: 16px 24px 8px 24px; font-size: 12px; font-weight: bold; color: var(--md-primary); text-transform: uppercase; letter-spacing: 1px;">Settings</div>
+            <div class="drawer-item" onclick="UI.toggleDrawer(); UI.toggleTheme()"><span class="material-symbols-outlined">dark_mode</span>Toggle Dark Mode</div>
+        </div>
+    </div>
+    <div id="app-shell">
+        <div id="offline-banner" class="offline-banner">
+            <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 6px;">wifi_off</span>
+            Working Offline - Changes saved locally
+        </div>
+
+        <main class="main-content">
+            
+            <div id="tab-dashboard" class="screen-section active-screen">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <strong style="font-size: 18px;">Business Overview</strong>
+                    <select id="dashboard-date-filter" style="width: auto; padding: 4px 8px; font-size: 14px; border:none; background:var(--md-surface-variant); border-radius:16px;" onchange="UI.renderDashboard()">
+                        <option value="today">Today</option>
+                        <option value="month" selected>This Month</option>
+                        <option value="year">This Year</option>
+                        <option value="all">All Time</option>
+                    </select>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+                    <div class="m3-card">
+                        <small style="color: var(--md-text-muted);">Total Sales</small>
+                        <div class="large-text color-primary" id="dash-total-sales" style="font-size: 20px; margin-top: 4px;">&#8377;0.00</div>
+                    </div>
+                    <div class="m3-card">
+                        <small style="color: var(--md-text-muted);">True Net Profit</small>
+                        <div class="large-text" id="dash-net-profit" style="font-size: 20px; margin-top: 4px; color: var(--md-success);">&#8377;0.00</div>
+                        <small id="profit-breakdown" style="font-size: 10px; color: var(--md-text-muted); display: block; margin-top: 4px;"></small>
+                    </div>
                 </div>
 
-                <div class="row-gap mb-4">
-                    <div class="input-group flex-1">
-                        <label class="md-label">Document Stamp</label>
-                        <select id="doc-stamp-select" class="md-input">
-                            <option value="TAX INVOICE" selected>TAX INVOICE</option>
-                            <option value="DELIVERY CHALLAN">DELIVERY CHALLAN</option>
-                            <option value="PURCHASE RETURN">PURCHASE RETURN</option>
-                            <option value="SALES RETURN">SALES RETURN</option>
-                            <option value="CONFIDENTIAL">CONFIDENTIAL</option>
-                            <option value="">None</option>
-                        </select>
-                    </div>
-                    <div class="input-group flex-1">
-                        <label class="md-label">Ref / Invoice #</label>
-                        <input type="text" id="doc-ref-input" class="md-input" placeholder="e.g. INV-089" maxlength="30">
-                    </div>
+                <div class="m3-card" style="margin-bottom: 24px;">
+                    <strong style="display:flex; align-items:center; gap:8px; margin-bottom:16px; font-size: 16px; color: var(--md-primary);">
+                        <span class="material-symbols-outlined">bar_chart</span> Financial Overview
+                    </strong>
+                    <canvas id="dashboard-chart" style="width: 100%; max-height: 200px;"></canvas>
                 </div>
 
-                <div class="input-group mb-4">
-                    <label class="md-label">Recipient Font Size</label>
-                    <select id="font-size-select" class="md-input">
-                        <option value="S">Small (Best for long addresses)</option>
-                        <option value="M" selected>Medium (Standard)</option>
-                        <option value="L">Large (Best for short names)</option>
+
+                <div class="m3-card" style="margin-bottom: 24px;">
+                    <strong style="display:flex; align-items:center; gap:8px; margin-bottom:16px; font-size: 16px; color: var(--md-primary);">
+                        <span class="material-symbols-outlined">local_shipping</span> Order Fulfillment
+                    </strong>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--md-outline-variant); padding-bottom: 12px; margin-bottom: 12px;">
+                        <span style="color: var(--md-text-muted);">Open (Pending)</span>
+                        <span id="dash-orders-open" style="font-size: 14px; color: var(--md-text-muted);">0 Orders <strong style="color:var(--md-error);">&#8377;0.00</strong></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--md-outline-variant); padding-bottom: 12px; margin-bottom: 12px;">
+                        <span style="color: var(--md-text-muted);">Shipped (In Transit)</span>
+                        <span id="dash-orders-shipped" style="font-size: 14px; color: var(--md-text-muted);">0 Orders <strong style="color:#f57f17;">&#8377;0.00</strong></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--md-text-muted);">Completed</span>
+                        <span id="dash-orders-completed" style="font-size: 14px; color: var(--md-text-muted);">0 Orders <strong style="color:var(--md-success);">&#8377;0.00</strong></span>
+                    </div>
+                </div>
+                <div id="overdue-reminders-container" class="m3-card hidden" style="border-left: 4px solid var(--md-error); margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px; color: var(--md-error); margin-bottom: 12px;">
+                        <span class="material-symbols-outlined">warning</span>
+                        <strong>Overdue Collections</strong>
+                    </div>
+                    <p id="overdue-text" style="font-size: 14px; margin-bottom: 12px;"></p>
+                    <ul class="list-view" id="list-overdue"></ul>
+                </div>
+            </div>
+
+            <div id="tab-masters" class="screen-section hidden">
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+                    
+                    <div class="m3-card tap-target" style="display: flex; align-items: center; gap: 16px; padding: 16px; margin-bottom: 0;" onclick="UI.openMasterView('products', 'Inventory Master')">
+                        <div class="icon-circle" style="background: #e3f2fd; color: #0061a4; width: 48px; height: 48px; flex-shrink: 0;"><span class="material-symbols-outlined">inventory_2</span></div>
+                        <div style="flex: 1;"><strong class="large-text">Products / Inventory</strong><br><small style="color: var(--md-text-muted);">Manage your items and stock</small></div>
+                        <span class="material-symbols-outlined" style="color: var(--md-outline-variant);">chevron_right</span>
+                    </div>
+
+                    <div class="m3-card tap-target" style="display: flex; align-items: center; gap: 16px; padding: 16px; margin-bottom: 0;" onclick="UI.openMasterView('customers', 'Customer Master')">
+                        <div class="icon-circle" style="background: #e8f5e9; color: #2e7d32; width: 48px; height: 48px; flex-shrink: 0;"><span class="material-symbols-outlined">groups</span></div>
+                        <div style="flex: 1;"><strong class="large-text">Customers / Receivables</strong><br><small style="color: var(--md-text-muted);">Manage buyers and dues</small></div>
+                        <span class="material-symbols-outlined" style="color: var(--md-outline-variant);">chevron_right</span>
+                    </div>
+
+                    <div class="m3-card tap-target" style="display: flex; align-items: center; gap: 16px; padding: 16px; margin-bottom: 0;" onclick="UI.openMasterView('suppliers', 'Supplier Master')">
+                        <div class="icon-circle" style="background: #fff0f2; color: #ba1a1a; width: 48px; height: 48px; flex-shrink: 0;"><span class="material-symbols-outlined">local_shipping</span></div>
+                        <div style="flex: 1;"><strong class="large-text">Suppliers / Payables</strong><br><small style="color: var(--md-text-muted);">Manage vendors and bills</small></div>
+                        <span class="material-symbols-outlined" style="color: var(--md-outline-variant);">chevron_right</span>
+                    </div>
+
+                    <div class="m3-card tap-target" style="display: flex; align-items: center; gap: 16px; padding: 16px; margin-bottom: 0;" onclick="UI.openMasterView('contacts', 'Address Book')">
+                        <div class="icon-circle" style="background: #f3e5f5; color: #6a1b9a; width: 48px; height: 48px; flex-shrink: 0;"><span class="material-symbols-outlined">contact_phone</span></div>
+                        <div style="flex: 1;"><strong class="large-text">Address Book</strong><br><small style="color: var(--md-text-muted);">All saved contacts</small></div>
+                        <span class="material-symbols-outlined" style="color: var(--md-outline-variant);">chevron_right</span>
+                    </div>
+
+                    <div class="m3-card tap-target" style="display: flex; align-items: center; gap: 16px; padding: 16px; margin-bottom: 0;" onclick="UI.openMasterView('adjustments', 'Stock Audit Log')">
+                        <div class="icon-circle" style="background: #fff8e1; color: #f57f17; width: 48px; height: 48px; flex-shrink: 0;"><span class="material-symbols-outlined">build</span></div>
+                        <div style="flex: 1;"><strong class="large-text">Stock Adjustments</strong><br><small style="color: var(--md-text-muted);">Audit logs and corrections</small></div>
+                        <span class="material-symbols-outlined" style="color: var(--md-outline-variant);">chevron_right</span>
+                    </div>
+
+                    <div class="m3-card tap-target" style="display: flex; align-items: center; gap: 16px; padding: 16px; margin-bottom: 0;" onclick="if(window.app) window.app.openForm('account')">
+                        <div class="icon-circle" style="background: #e0f7fa; color: #006064; width: 48px; height: 48px; flex-shrink: 0;"><span class="material-symbols-outlined">account_balance</span></div>
+                        <div style="flex: 1;"><strong class="large-text">Bank & Cash Accounts</strong><br><small style="color: var(--md-text-muted);">Add new payment modes</small></div>
+                        <span class="material-symbols-outlined" style="color: var(--md-outline-variant);">add_circle</span>
+                    </div>
+
+                </div>
+                
+                <div id="bank-balances-container" style="display: flex; flex-direction: column; gap: 12px; padding: 8px 0 16px 0; margin-top: 4px;">
+                </div>
+            </div>
+
+            <div id="tab-documents" class="screen-section hidden">
+                <div style="display: flex; gap: 8px; margin-bottom: 16px; background: var(--md-surface-variant); padding: 4px; border-radius: 8px;">
+                    <div id="btn-toggle-sales" class="tap-target" style="flex: 1; text-align: center; padding: 8px; background: var(--md-surface); border-radius: 6px; font-weight: bold; box-shadow: var(--elevation-1);" onclick="document.getElementById('doc-sales-view').classList.remove('hidden'); document.getElementById('doc-purchase-view').classList.add('hidden'); this.style.background='var(--md-surface)'; this.style.boxShadow='var(--elevation-1)'; document.getElementById('btn-toggle-purchases').style.background='transparent'; document.getElementById('btn-toggle-purchases').style.boxShadow='none';">Sales</div>
+                    <div id="btn-toggle-purchases" class="tap-target" style="flex: 1; text-align: center; padding: 8px; border-radius: 6px; font-weight: bold;" onclick="document.getElementById('doc-purchase-view').classList.remove('hidden'); document.getElementById('doc-sales-view').classList.add('hidden'); this.style.background='var(--md-surface)'; this.style.boxShadow='var(--elevation-1)'; document.getElementById('btn-toggle-sales').style.background='transparent'; document.getElementById('btn-toggle-sales').style.boxShadow='none';">Purchases</div>
+                </div>
+
+                <div id="doc-sales-view" style="padding-bottom: 80px;">
+                    <div class="search-bar" style="padding-right: 8px; margin-bottom: 16px;">
+                        <span class="material-symbols-outlined" style="color: var(--md-outline);">search</span>
+                        <input type="text" id="search-sales" placeholder="Search Invoices..." style="flex: 1; min-width: 0;">
+                        
+                        <div id="sum-sales" style="background: var(--md-primary-container); color: var(--md-on-primary-container); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; white-space: nowrap; margin-right: 4px;">&#8377;0.00</div>
+                        
+                        <div style="width: 1px; height: 20px; background: var(--md-outline-variant); margin: 0 4px;"></div>
+                        <span class="material-symbols-outlined tap-target" style="color: var(--md-primary); padding: 6px; border-radius: 50%;" onclick="if(window.UI) window.UI.openBottomSheet('sheet-sales-sort')">sort</span>
+                        <span class="material-symbols-outlined tap-target" style="color: var(--md-on-surface-variant); padding: 6px; border-radius: 50%; margin-left: 2px;" onclick="if(window.UI) window.UI.openBottomSheet('sheet-sales-filter')">more_vert</span>
+                    </div>
+                    
+                    <input type="hidden" id="sort-sales" value="date-desc">
+                    <div id="sales-history-container"></div>
+                </div>
+
+                <div id="doc-purchase-view" class="hidden" style="padding-bottom: 80px;">
+                    <div class="search-bar" style="padding-right: 8px; margin-bottom: 16px;">
+                        <span class="material-symbols-outlined" style="color: var(--md-outline);">search</span>
+                        <input type="text" id="search-purchases" placeholder="Search POs..." style="flex: 1; min-width: 0;">
+                        
+                        <div id="sum-purchases" style="background: #fff8e1; color: #f57f17; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; white-space: nowrap; margin-right: 4px;">&#8377;0.00</div>
+                        
+                        <div style="width: 1px; height: 20px; background: var(--md-outline-variant); margin: 0 4px;"></div>
+                        <span class="material-symbols-outlined tap-target" style="color: var(--md-primary); padding: 6px; border-radius: 50%;" onclick="if(window.UI) window.UI.openBottomSheet('sheet-purchases-sort')">sort</span>
+                        <span class="material-symbols-outlined tap-target" style="color: var(--md-on-surface-variant); padding: 6px; border-radius: 50%; margin-left: 2px;" onclick="if(window.UI) window.UI.openBottomSheet('sheet-purchases-filter')">more_vert</span>
+                    </div>
+                    
+                    <input type="hidden" id="sort-purchases" value="date-desc">
+                    <div id="purchase-history-container"></div>
+                </div>
+            </div>
+            <div id="tab-cashbook" class="screen-section hidden">
+                
+                <div class="search-bar" style="padding-right: 8px; margin-bottom: 16px;">
+                    <span class="material-symbols-outlined" style="color: var(--md-outline);">search</span>
+                    <input type="text" id="search-cashbook" placeholder="Search transactions..." style="flex: 1; min-width: 0;">
+                    
+                    <div style="width: 1px; height: 20px; background: var(--md-outline-variant); margin: 0 4px;"></div>
+                    
+                    <span class="material-symbols-outlined tap-target" style="color: var(--md-primary); padding: 6px; border-radius: 50%;" onclick="if(window.UI) window.UI.openBottomSheet('sheet-cashbook-sort')">sort</span>
+                    
+                    <span class="material-symbols-outlined tap-target" style="color: var(--md-on-surface-variant); padding: 6px; border-radius: 50%; margin-left: 2px;" onclick="if(window.UI) window.UI.openBottomSheet('sheet-cashbook-filter')">more_vert</span>
+                </div>
+                
+                <input type="hidden" id="sort-cashbook" value="date-desc">
+                
+                <div id="cashbook-container"></div>
+            </div>
+
+            <div id="tab-expenses" class="screen-section hidden">
+                
+                <div class="search-bar" style="padding-right: 8px; margin-bottom: 16px;">
+                    <span class="material-symbols-outlined" style="color: var(--md-outline);">search</span>
+                    <input type="text" id="search-expenses" placeholder="Search expenses or categories..." style="flex: 1; min-width: 0;">
+                    
+                    <div style="width: 1px; height: 20px; background: var(--md-outline-variant); margin: 0 4px;"></div>
+                    
+                    <span class="material-symbols-outlined tap-target" style="color: var(--md-primary); padding: 6px; border-radius: 50%;" onclick="if(window.UI) window.UI.openBottomSheet('sheet-expenses-sort')">sort</span>
+                </div>
+                
+                <input type="hidden" id="sort-expenses" value="date-desc">
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; padding: 0 4px;">
+                    <small style="color:var(--md-text-muted);">Total Expenses: <strong id="sum-expenses" style="color:var(--md-error);">&#8377;0.00</strong></small>
+                </div>
+                
+                <div id="expense-history-container"></div>
+            </div>
+            
+            <div style="height: 80px;"></div>
+        </main>
+        
+        <button id="main-fab" class="floating-action-button tap-target" onclick="UI.handleFabClick()">
+            <span class="material-symbols-outlined">add</span>
+        </button>
+
+        <nav class="bottom-nav">
+            <div id="nav-dash" class="nav-item active" onclick="UI.switchTab('tab-dashboard', 'Dashboard', this)"><span class="material-symbols-outlined">dashboard</span><span>Home</span></div>
+            <div id="nav-masters" class="nav-item" onclick="UI.switchTab('tab-masters', 'Master Data', this); if(window.UI) window.UI.renderBankBalances();"><span class="material-symbols-outlined">database</span><span>Masters</span></div>
+            
+            <div id="nav-docs" class="nav-item" onclick="UI.switchTab('tab-documents', 'Documents', this)">
+                <span class="nav-badge hidden" id="badge-docs">0</span>
+                <span class="material-symbols-outlined">receipt_long</span><span>Docs</span>
+            </div>
+            
+            <div id="nav-cashbook" class="nav-item" onclick="UI.switchTab('tab-cashbook', 'Cashbook', this)"><span class="material-symbols-outlined">account_balance_wallet</span><span>Bank</span></div>
+            <div class="nav-item" onclick="UI.toggleDrawer()"><span class="material-symbols-outlined">menu</span><span>Menu</span></div>
+        </nav>
+    </div>
+
+    <div id="activity-master-view" class="activity-screen hidden">
+        <div class="activity-header">
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeActivity('activity-master-view')">arrow_back</span>
+            <span id="master-view-title" style="font-size: 18px; font-weight: 500;">Master List</span>
+            <span id="btn-master-action" class="tap-target hidden" style="color: var(--md-primary); font-weight: 500; margin-left: auto;">Action</span>
+        </div>
+        <div class="activity-content" style="padding: 16px;">
+            
+            <div class="search-bar" style="padding-right: 8px;">
+                <span class="material-symbols-outlined" style="color: var(--md-outline);">search</span>
+                <input type="text" id="search-master-view" placeholder="Search..." style="flex: 1; min-width: 0;">
+                
+                <div style="width: 1px; height: 20px; background: var(--md-outline-variant); margin: 0 4px;"></div>
+                
+                <span class="material-symbols-outlined tap-target" style="color: var(--md-primary); padding: 6px; border-radius: 50%;" onclick="UI.openBottomSheet('sheet-master-sort')">tune</span>
+                
+                <span id="master-more-options" class="material-symbols-outlined tap-target hidden" style="color: var(--md-on-surface-variant); padding: 6px; border-radius: 50%; margin-left: 2px;" onclick="if(window.UI) window.UI.openBottomSheet('sheet-master-actions')">more_vert</span>
+            </div>
+            
+            <input type="file" id="csv-import-file" accept=".csv" class="hidden" onchange="if(window.app) window.app.handleCSVImport(event)">
+            
+            <div id="master-list-container"></div>
+        </div>
+    </div>
+
+    <div id="activity-sales-form" class="activity-screen hidden">
+        <div class="activity-header">
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeActivity('activity-sales-form')">close</span>
+            <span id="form-title-sales" style="font-size: 18px; font-weight: 500;">New Sales Invoice</span>
+            <div style="display: flex; gap: 16px; margin-left: auto;">
+                <span class="material-symbols-outlined tap-target hidden" id="btn-delete-sales" onclick="app.deleteRecord('sales')" style="color: var(--md-error);">delete</span>
+                <span class="tap-target" onclick="app.generatePDF('sales')" style="display:flex; align-items:center; gap:4px; color:var(--md-primary); font-size:14px; font-weight:500;"><span class="material-symbols-outlined">share</span> Print / Share</span>
+            </div>
+        </div>
+        <div class="activity-content">
+            <form id="form-sales">
+                <div class="m3-card" style="margin-bottom: 12px; background: var(--md-surface-variant); display: flex; justify-content: space-between; align-items: center;" onclick="UI.openBottomSheet('sheet-customers')">
+                    <div>
+                        <small style="color: var(--md-text-muted);">Billed To *</small>
+                        <div id="sales-customer-display" class="large-text" style="color: var(--md-text-muted);">Select Customer...</div>
+                        <input type="hidden" id="sales-customer-id" required>
+                    </div>
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </div>
+
+                <div id="sales-return-ref-group" class="form-group hidden" style="background: #fff0f2; padding: 12px; border-radius: 8px; border: 1px solid var(--md-error);">
+                    <label style="color: var(--md-error);">Original Invoice Reference *</label>
+                    <select id="sales-original-ref" onchange="app.loadReturnItems(this.value, 'sales')">
+                        <option value="">Select Customer First...</option>
                     </select>
                 </div>
 
-                <div class="search-dropdown-container mb-4">
-                    <span class="material-symbols-rounded search-icon">search</span>
-                    <input type="text" id="client-search" class="md-input search-input" placeholder="Search Address Book..." autocomplete="off">
-                    <div id="search-results" class="search-results hidden"></div>
-                </div>
-
-                <div class="flex-between mb-2">
-                    <label class="md-label m-0">Print Address</label>
-                    
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <label style="font-size: 12px; color: var(--on-surface-variant); display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                            <input type="checkbox" id="smart-clear-cb" checked> Keep Layout
-                        </label>
-                        <button id="clear-btn" class="text-btn danger-text">
-                            <span class="material-symbols-rounded" style="font-size: 16px;">delete</span> Clear
-                        </button>
-                    </div>
-                </div>
-                
-                <div style="position: relative;">
-                    <textarea id="recipient-address" rows="5" class="md-input" style="text-transform: uppercase;" placeholder="Start typing an address or select from search above..."></textarea>
-                    <div id="inline-autocomplete" class="inline-autocomplete hidden"></div>
-                </div>
-            </div>
-
-            <div class="md-card">
-                <div class="card-title-wrap mb-4">
-                    <span class="material-symbols-rounded icon-primary">visibility</span>
-                    <h3 class="card-title">Live Preview</h3>
-                </div>
-                
-                <div class="envelope-preview-container">
-                    <div class="envelope-preview" id="preview-box">
-                        <div id="preview-safe-margin" style="position: absolute; top: 4%; bottom: 4%; left: 2%; right: 2%; border: 2px dashed rgba(255, 0, 0, 0.4); pointer-events: none; z-index: 10;"></div>
-                        
-                        <div id="preview-grid" class="preview-grid"></div>
-                        <div id="preview-doc-stamp" class="preview-doc-stamp"></div>
-                        
-                        <div id="preview-recipient" class="preview-text"></div>
-                        
-                        <div id="preview-return-cb" class="preview-return-cb">
-                            If undelivered, tick reason:<br>[ ] Shifted &nbsp; [ ] Locked &nbsp; [ ] Wrong Addr &nbsp; [ ] Refused
-                        </div>
-                        
-                        <div id="preview-doc-ref" class="preview-doc-ref"></div>
-                        
-                        <div class="preview-footer">
-                            <img id="preview-logo" class="preview-logo" src="" alt="Logo">
-                            <div id="preview-return" class="preview-return-text"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dpad-wrapper mt-4">
-                    <label class="md-label" style="text-align: center; display: block; margin-bottom: 12px;">Fine-Tune Alignment</label>
-                    <div class="dpad-grid">
-                        <button class="dpad-btn up" id="nudge-up"><span class="material-symbols-rounded">keyboard_arrow_up</span></button>
-                        <button class="dpad-btn left" id="nudge-left"><span class="material-symbols-rounded">keyboard_arrow_left</span></button>
-                        <div class="dpad-center" id="nudge-display">X: 40<br>Y: 35</div>
-                        <button class="dpad-btn right" id="nudge-right"><span class="material-symbols-rounded">keyboard_arrow_right</span></button>
-                        <button class="dpad-btn down" id="nudge-down"><span class="material-symbols-rounded">keyboard_arrow_down</span></button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="md-card">
-                <div class="card-header" onclick="toggleCard('settings-content')">
-                    <div class="card-title-wrap">
-                        <span class="material-symbols-rounded icon-primary">aspect_ratio</span>
-                        <h3 class="card-title">Size & Print Options</h3>
-                    </div>
-                    <span class="material-symbols-rounded expand-icon" id="settings-content-icon">expand_more</span>
-                </div>
-                
-                <div class="card-body hidden" id="settings-content">
-                    <div class="input-group">
-                        <label class="md-label">Cover Format</label>
-                        <select id="envelope-size" class="md-input">
-                            <option value="dl">Standard DL (220 x 110 mm)</option>
-                            <option value="c5">A5 Cover (229 x 162 mm)</option>
-                            <option value="c4">A4 Cover (324 x 229 mm)</option>
-                            <option value="custom">Custom Size</option>
+                <div class="m3-card" style="margin-bottom: 12px; display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px;">
+<div class="form-group" style="min-width: 140px; margin-bottom: 0;"><label>Invoice No</label><input type="text" id="sales-invoice-no"></div>
+<div class="form-group" style="min-width: 140px; margin-bottom: 0;"><label>Date</label><input type="date" id="sales-date"></div>
+                    <div class="form-group" style="min-width: 140px; margin-bottom: 0;">
+                        <label>Status</label>
+                        <select id="sales-order-status" onchange="UI.toggleDates('sales')">
+                            <option value="Open">Draft / Open</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Completed" selected>Completed</option>
                         </select>
                     </div>
-                    
-                    <div id="custom-size-inputs" class="row-gap hidden mt-3">
-                        <div class="input-group flex-1">
-                            <label class="md-label">Width (mm)</label>
-                            <input type="number" id="custom-width" value="250" class="md-input">
-                        </div>
-                        <div class="input-group flex-1">
-                            <label class="md-label">Height (mm)</label>
-                            <input type="number" id="custom-height" value="150" class="md-input">
-                        </div>
-                    </div>
-                    
-                    <div class="list-tile mt-4">
-                        <div class="list-tile-text">
-                            <h4>Hardware Safe Margin</h4>
-                            <p>Shows red boundary preventing print cut-offs</p>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" id="enable-safe-margin" checked>
-                            <span class="slider round"></span>
-                        </label>
-                    </div>
-
-                    <div class="list-tile mt-3">
-                        <div class="list-tile-text">
-                            <h4>"Return Reason" Checkboxes</h4>
-                            <p>Prints Shifted/Locked/Refused boxes</p>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" id="enable-return-cb">
-                            <span class="slider round"></span>
-                        </label>
-                    </div>
-
-                    <div class="list-tile mt-3">
-                        <div class="list-tile-text">
-                            <h4>Printer Calibration Grid</h4>
-                            <p>Prints a 1cm measurement grid for alignment</p>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" id="enable-grid">
-                            <span class="slider round"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="md-card">
-                <div class="card-header" onclick="toggleCard('sender-content')">
-                    <div class="card-title-wrap">
-                        <span class="material-symbols-rounded icon-primary">storefront</span>
-                        <h3 class="card-title">Sender Details (Footer)</h3>
-                    </div>
-                    <span class="material-symbols-rounded expand-icon" id="sender-content-icon">expand_more</span>
-                </div>
-                
-                <div class="card-body hidden" id="sender-content">
-                    <div class="flex-between mb-2">
-                        <label class="md-label m-0">Company Logo (.jpg/.png)</label>
-                        <button id="save-sender-btn" class="text-btn success-text">
-                            <span class="material-symbols-rounded" style="font-size: 16px;">save</span> Save Default
-                        </button>
-                    </div>
-                    <div class="file-upload-wrapper">
-                        <span class="material-symbols-rounded">cloud_upload</span>
-                        <input type="file" id="logo-upload" accept="image/png, image/jpeg" class="file-input">
-                    </div>
-                    
-                    <div class="input-group mt-4">
-                        <label class="md-label">Company Address</label>
-                        <textarea id="return-address" rows="3" class="md-input">YOUR COMPANY NAME&#10;123 Business Park Road&#10;Salem, TN 636001</textarea>
-                    </div>
-                </div>
-            </div>
-
-        </main>
-
-        <footer class="app-footer">
-            <div class="footer-actions">
-                <button id="print-btn" class="md-btn primary-btn flex-1">
-                    <span class="material-symbols-rounded">Share</span>   
-                               Share Cover
-                </button>
-            </div>
-        </footer>
-
-        <div id="toast-container"></div>
-
-        <div id="client-modal" class="full-screen-modal">
-            <header class="modal-header">
-                <button class="back-btn" id="close-modal-btn"><span class="material-symbols-rounded">arrow_back</span></button>
-                <h2>Address Book</h2>
-            </header>
-            <div class="modal-content">
-
-                <div class="md-card">
-                    <h3 class="card-title mb-4">Add / Edit Client</h3>
-                    <input type="hidden" id="edit-client-id">
-                    
-                    <div class="input-group mb-3">
-                        <label class="md-label">Company / Name</label>
-                        <input type="text" id="new-client-name" class="md-input" placeholder="e.g. Ashok Textiles">
-                    </div>
-                    <div class="input-group mb-3">
-                        <label class="md-label">Phone (Optional)</label>
-                        <input type="tel" id="new-client-phone" class="md-input" placeholder="e.g. 919876543210">
-                    </div>
-                    <div class="input-group mb-4">
-                        <label class="md-label">Full Address</label>
-                        <textarea id="new-client-address" rows="3" class="md-input" placeholder="Address..."></textarea>
-                    </div>
-                    
-                    <button id="save-client-btn" class="md-btn primary-btn w-100">Save Client</button>
+                    <div class="form-group" style="min-width: 140px; margin-bottom: 0;"><label>Tax Type</label><select id="sales-invoice-type" onchange="UI.calcSalesTotals()"><option value="B2B">B2B (GST)</option><option value="B2C">B2C (GST)</option><option value="Non-GST">Bill of Supply (No GST)</option></select></div>
                 </div>
 
-                <div class="md-card">
-                    <div class="card-title-wrap mb-1">
-                        <span class="material-symbols-rounded icon-primary">security</span>
-                        <h3 class="card-title">Data Backup & Restore</h3>
-                    </div>
-                    <p class="md-helper mb-3" style="font-size: 13px; color: var(--on-surface-variant);">Securely download or restore your Address Book & Settings</p>
-                    <div class="flex-between gap-2">
-                        <button id="export-backup-btn" class="md-btn primary-btn flex-1">
-                            <span class="material-symbols-rounded">download</span> Backup
-                        </button>
-                        <label class="md-btn primary-btn flex-1 m-0" style="background: var(--surface); color: var(--primary); border: 1px solid var(--outline); cursor: pointer;">
-                            <span class="material-symbols-rounded">upload</span> Restore
-                            <input type="file" id="import-backup-file" accept=".json" class="hidden">
-                        </label>
-                    </div>
+                <div class="m3-card" style="margin-bottom: 12px; display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px;">
+                    <div class="form-group" style="min-width: 140px; margin-bottom: 0;"><label>Order Ref</label><input type="text" id="sales-order-no"></div>
+                    <div class="form-group" style="min-width: 140px; margin-bottom: 0;"><label>Order Date</label><input type="date" id="sales-order-date"></div>
+                    <div class="form-group hidden" id="sales-shipped-date-group" style="min-width: 140px; margin-bottom: 0;"><label>Dispatch Date</label><input type="date" id="sales-shipped-date"></div>
+                    <div class="form-group hidden" id="sales-completed-date-group" style="min-width: 140px; margin-bottom: 0;"><label>Completed Date</label><input type="date" id="sales-completed-date"></div>
                 </div>
 
-                <div class="md-card">
-                    <div class="card-title-wrap mb-1">
-                        <span class="material-symbols-rounded icon-primary">note_add</span>
-                        <h3 class="card-title">Bulk Document Upload</h3>
+                <div class="m3-card" style="margin-bottom: 12px; padding: 0;">
+                    <div style="padding: 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--md-surface-variant);">
+                        <strong class="large-text">Items</strong>
+                        <button type="button" class="btn-primary-small" onclick="UI.openBottomSheet('sheet-products')">+ Add Item</button>
                     </div>
-                    <p class="md-helper mb-3" style="font-size: 13px; color: var(--on-surface-variant);">Select multiple .docx or .txt files to auto-extract addresses.</p>
-                    <label class="md-btn primary-btn w-100 m-0" style="background: var(--surface); color: var(--primary); border: 1px dashed var(--primary); cursor: pointer;">
-                        <span class="material-symbols-rounded">upload_file</span> Select Files
-                        <input type="file" id="bulk-doc-upload" accept=".docx, .txt" multiple class="hidden">
-                    </label>
-                </div>
-
-                <div class="md-card">
-                    <h3 class="card-title mb-3">Saved Clients</h3>
-                    <div id="client-list" class="client-list"></div>
-                </div>
-            </div>
-        </div>
-
-        <div id="ledger-modal" class="full-screen-modal">
-            <header class="modal-header">
-                <button class="back-btn" id="close-ledger-btn"><span class="material-symbols-rounded">arrow_back</span></button>
-                <h2>Dispatch Ledger</h2>
-            </header>
-            <div class="modal-content">
-                <div class="md-card p-0 mb-4">
-                    <div class="table-container">
-                        <table class="md-table" id="ledger-table">
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; min-width: 600px; border-collapse: collapse;">
                             <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Recipient</th>
-                                    <th style="text-align:right;">Action</th>
+                                <tr style="background: var(--md-surface-variant); text-align: left;">
+                                    <th style="padding: 8px;">Product</th>
+                                    <th style="padding: 8px; width: 60px;">HSN</th>
+                                    <th style="padding: 8px; width: 60px;">Qty</th>
+                                    <th style="padding: 8px; width: 50px;">UOM</th>
+                                    <th style="padding: 8px; width: 80px;">Rate</th>
+                                    <th style="padding: 8px; width: 50px;">GST%</th>
+                                    <th style="padding: 8px; text-align: right;">Total</th>
+                                    <th style="padding: 8px; width: 40px; text-align: center;">Act</th>
                                 </tr>
                             </thead>
-                            <tbody id="ledger-body"></tbody>
+                            <tbody id="sales-items-body"></tbody>
                         </table>
                     </div>
+                    <div id="sales-empty-items" style="padding: 24px; text-align: center; color: var(--md-text-muted);">No items added yet.</div>
                 </div>
-                <div class="flex-between">
-                    <button id="clear-ledger-btn" class="text-btn danger-text">Clear History</button>
-                    <button id="export-ledger-btn" class="md-btn primary-btn">
-                        <span class="material-symbols-rounded">download</span> Export CSV
-                    </button>
+
+                <div class="m3-card" style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>Subtotal:</span><strong id="sales-subtotal">&#8377;0.00</strong></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span>Discount:</span>
+                        <div style="display: flex; gap: 4px; width: 140px;">
+                            <input type="number" inputmode="decimal" id="sales-discount" value="0" min="0" step="any" oninput="UI.calcSalesTotals()" style="width: 70%;">
+                            <select id="sales-discount-type" onchange="UI.calcSalesTotals()" style="width: 30%; padding: 4px;"><option value="&#8377;">&#8377;</option><option value="%">%</option></select>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>Total GST:</span><strong id="sales-gst-total">&#8377;0.00</strong></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span>Freight:</span>
+                        <input type="number" inputmode="decimal" id="sales-freight" value="0" step="any" oninput="UI.calcSalesTotals()" style="width: 100px; text-align: right;">
+                    </div>
+                    <hr style="border:none; border-top:1px dashed var(--md-outline-variant); margin: 12px 0;">
+                    <div style="display: flex; justify-content: space-between; font-size: 18px; color: var(--md-primary);"><strong>Grand Total:</strong><strong id="sales-grand-total">&#8377;0.00</strong></div>
+                </div>
+
+
+                <div id="sales-payment-history-card" class="m3-card hidden" style="margin-bottom: 24px; border: 1px solid var(--md-outline-variant);">
+                    <strong style="display: block; margin-bottom: 12px; color: var(--md-primary);">Linked Payments & Receipts</strong>
+                    <div id="sales-payment-history-list"></div>
+                </div>
+
+                <div id="sales-expense-history-card" class="m3-card hidden" style="margin-bottom: 24px; border: 1px solid var(--md-outline-variant);">
+                    <strong style="display: block; margin-bottom: 12px; color: var(--md-error);">Linked Job Expenses</strong>
+                    <div id="sales-expense-history-list"></div>
+                </div>
+
+                <div class="form-group" style="margin-top: 16px; margin-bottom: 24px;">
+                    <label style="color: #f57f17; font-weight: bold;"><span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">lock</span> Private Internal Notes</label>
+                    <textarea id="sales-internal-notes" rows="2" placeholder="Notes for your reference only (will not be printed)..." style="width: 100%; padding: 8px; border: 1px dashed #f57f17; border-radius: 8px; background: rgba(245, 127, 23, 0.05);"></textarea>
+                </div>
+
+                <button type="submit" id="btn-save-sales" class="btn-primary" style="width: 100%; margin-bottom: 40px;">Save Invoice</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="activity-purchase-form" class="activity-screen hidden">
+        <div class="activity-header">
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeActivity('activity-purchase-form')">close</span>
+            <span id="form-title-purchase" style="font-size: 18px; font-weight: 500;">New Purchase Bill</span>
+            <div style="display: flex; gap: 16px; margin-left: auto;">
+                <span class="material-symbols-outlined tap-target hidden" id="btn-delete-purchase" onclick="app.deleteRecord('purchase')" style="color: var(--md-error);">delete</span>
+                <span class="tap-target" onclick="app.generatePDF('purchase')" style="display:flex; align-items:center; gap:4px; color:var(--md-primary); font-size:14px; font-weight:500;"><span class="material-symbols-outlined">share</span> Print / Share</span>
+            </div>
+        </div>
+        <div class="activity-content">
+            <form id="form-purchase">
+                <div class="m3-card" style="margin-bottom: 12px; background: var(--md-surface-variant); display: flex; justify-content: space-between; align-items: center;" onclick="UI.openBottomSheet('sheet-suppliers')">
+                    <div>
+                        <small style="color: var(--md-text-muted);">Purchased From *</small>
+                        <div id="purchase-supplier-display" class="large-text" style="color: var(--md-text-muted);">Select Supplier...</div>
+                        <input type="hidden" id="purchase-supplier-id" required>
+                    </div>
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </div>
+
+                <div id="purchase-return-ref-group" class="form-group hidden" style="background: #e8f5e9; padding: 12px; border-radius: 8px; border: 1px solid var(--md-success);">
+                    <label style="color: var(--md-success);">Original PO/Bill Reference *</label>
+                    <select id="purchase-original-ref" onchange="app.loadReturnItems(this.value, 'purchase')">
+                        <option value="">Select Supplier First...</option>
+                    </select>
+                </div>
+
+                <div class="m3-card" style="margin-bottom: 12px; display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px;">
+                    <div class="form-group" style="min-width: 140px; margin-bottom: 0;"><label>Bill / PO No</label><input type="text" id="purchase-po-no"></div>
+<div class="form-group" style="min-width: 140px; margin-bottom: 0;"><label>Bill Date</label><input type="date" id="purchase-date"></div>
+                    <div class="form-group" style="min-width: 140px; margin-bottom: 0;">
+                        <label>Status</label>
+                        <select id="purchase-order-status" onchange="UI.toggleDates('purchase')">
+                            <option value="Open">Draft PO</option>
+                            <option value="Shipped">In Transit</option>
+                            <option value="Completed" selected>Received</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="min-width: 140px; margin-bottom: 0;"><label>Tax Type</label><select id="purchase-invoice-type" onchange="UI.calcPurchaseTotals()"><option value="B2B">B2B (ITC Claimable)</option><option value="Non-GST">Non-GST / Exempt</option></select></div>
+                </div>
+
+                <div class="m3-card" style="margin-bottom: 12px; display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px;">
+                    <div class="form-group" style="min-width: 140px; margin-bottom: 0;"><label>Our PO No</label><input type="text" id="purchase-order-no"></div>
+                    <div class="form-group" style="min-width: 140px; margin-bottom: 0;"><label>Order Date</label><input type="date" id="purchase-order-date"></div>
+                    <div class="form-group hidden" id="purchase-shipped-date-group" style="min-width: 140px; margin-bottom: 0;"><label>Dispatch Date</label><input type="date" id="purchase-shipped-date"></div>
+                    <div class="form-group hidden" id="purchase-completed-date-group" style="min-width: 140px; margin-bottom: 0;"><label>Completed Date</label><input type="date" id="purchase-completed-date"></div>
+                </div>
+
+                <div class="m3-card" style="margin-bottom: 12px; padding: 0;">
+                    <div style="padding: 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--md-surface-variant);">
+                        <strong class="large-text">Items Received</strong>
+                        <button type="button" class="btn-primary-small" onclick="UI.openBottomSheet('sheet-products')">+ Add Item</button>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; min-width: 600px; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: var(--md-surface-variant); text-align: left;">
+                                    <th style="padding: 8px;">Product</th>
+                                    <th style="padding: 8px; width: 60px;">HSN</th>
+                                    <th style="padding: 8px; width: 60px;">Qty</th>
+                                    <th style="padding: 8px; width: 50px;">UOM</th>
+                                    <th style="padding: 8px; width: 80px;">Buy Rate</th>
+                                    <th style="padding: 8px; width: 50px;">GST%</th>
+                                    <th style="padding: 8px; text-align: right;">Total</th>
+                                    <th style="padding: 8px; width: 40px; text-align: center;">Act</th>
+                                </tr>
+                            </thead>
+                            <tbody id="purchase-items-body"></tbody>
+                        </table>
+                    </div>
+                    <div id="purchase-empty-items" style="padding: 24px; text-align: center; color: var(--md-text-muted);">No items added yet.</div>
+                </div>
+
+                <div class="m3-card" style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>Subtotal:</span><strong id="purchase-subtotal">&#8377;0.00</strong></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span>Discount:</span>
+                        <div style="display: flex; gap: 4px; width: 140px;">
+                            <input type="number" inputmode="decimal" id="purchase-discount" value="0" min="0" step="any" oninput="UI.calcPurchaseTotals()" style="width: 70%;">
+                            <select id="purchase-discount-type" onchange="UI.calcPurchaseTotals()" style="width: 30%; padding: 4px;"><option value="&#8377;">&#8377;</option><option value="%">%</option></select>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>Total Input GST:</span><strong id="purchase-gst-total" style="color:var(--md-success);">&#8377;0.00</strong></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span>Freight / Extra Charges:</span>
+                        <input type="number" inputmode="decimal" id="purchase-freight" value="0" step="any" oninput="UI.calcPurchaseTotals()" style="width: 100px; text-align: right;">
+                    </div>
+                    <hr style="border:none; border-top:1px dashed var(--md-outline-variant); margin: 12px 0;">
+                    <div style="display: flex; justify-content: space-between; font-size: 18px; color: var(--md-primary);"><strong>Grand Total:</strong><strong id="purchase-grand-total">&#8377;0.00</strong></div>
+                </div>
+
+
+                <div id="purchase-payment-history-card" class="m3-card hidden" style="margin-bottom: 24px; border: 1px solid var(--md-outline-variant);">
+                    <strong style="display: block; margin-bottom: 12px; color: var(--md-primary);">Linked Payments & Vouchers</strong>
+                    <div id="purchase-payment-history-list"></div>
+                </div>
+
+                <div id="purchase-expense-history-card" class="m3-card hidden" style="margin-bottom: 24px; border: 1px solid var(--md-outline-variant);">
+                    <strong style="display: block; margin-bottom: 12px; color: var(--md-error);">Linked Order Expenses</strong>
+                    <div id="purchase-expense-history-list"></div>
+                </div>
+
+                <div class="form-group" style="margin-top: 16px; margin-bottom: 24px;">
+                    <label style="color: #f57f17; font-weight: bold;"><span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">lock</span> Private Internal Notes</label>
+                    <textarea id="purchase-internal-notes" rows="2" placeholder="Notes for your reference only (will not be printed)..." style="width: 100%; padding: 8px; border: 1px dashed #f57f17; border-radius: 8px; background: rgba(245, 127, 23, 0.05);"></textarea>
+                </div>
+
+                <button type="submit" id="btn-save-purchase" class="btn-primary" style="width: 100%; margin-bottom: 40px;">Save Purchase</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="activity-expense-form" class="activity-screen hidden">
+        <div class="activity-header">
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeActivity('activity-expense-form')">close</span>
+            <span style="font-size: 18px; font-weight: 500;">Log Expense</span>
+            <span class="material-symbols-outlined tap-target hidden" id="btn-delete-expense" onclick="app.deleteRecord('expense')" style="color: var(--md-error); margin-left: auto;">delete</span>
+        </div>
+        <div class="activity-content">
+            <form id="form-expense">
+                <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;"><label>Expense No *</label><input type="text" id="expense-no" name="expenseNo" required></div>
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;"><label>Date *</label><input type="date" id="expense-date" name="date" required></div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Category *</label>
+                    <div style="display: flex; gap: 8px;">
+                        <select name="category" id="expense-category-select" style="flex: 1;" required>
+                            <option value="">Loading...</option>
+                        </select>
+                        <button type="button" class="btn-primary-small" style="padding: 0 12px; border-radius: 8px;" onclick="app.manageSimpleMaster('expenseCategories', 'Expense Categories')"><span class="material-symbols-outlined" style="font-size: 20px;">edit</span></button>
+                    </div>
+                </div>
+                <div class="form-group"><label>Amount (&#8377;) *</label><input type="number" inputmode="decimal" name="amount" min="0" step="any" required></div>
+                
+                <div class="form-group">
+                    <label>Paid From Account *</label>
+                    <select id="expense-account-id" name="accountId">
+                        <option value="cash">Cash Drawer</option>
+                    </select>
+                </div>
+
+                <div class="m3-card tap-target" style="margin-bottom: 16px; background: var(--md-surface-variant); display: flex; justify-content: space-between; align-items: center;" onclick="UI.openBottomSheet('sheet-linked-docs')">
+                    <div>
+                        <small style="color: var(--md-text-muted);">Link to Invoice / PO (Optional)</small>
+                        <div id="expense-linked-display" class="large-text" style="color: var(--md-text-muted);">-- No Link (General Expense) --</div>
+                        <input type="hidden" id="expense-linked-invoice" name="linkedInvoice">
+                    </div>
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </div>
+                <div class="form-group"><label>Notes / Ref</label><input type="text" name="notes" placeholder="e.g., March Electricity Bill"></div>
+                
+                <div class="form-group">
+                    <label>Attach Bill / Receipt</label>
+                    <input type="file" accept="image/*" onchange="const file = this.files[0]; if(file){ const reader = new FileReader(); reader.onload = function(e){ const img = document.getElementById('expense-attachment-preview'); img.src = e.target.result; img.classList.remove('hidden'); }; reader.readAsDataURL(file); }">
+                    <img id="expense-attachment-preview" class="hidden" style="max-width: 100px; height: auto; margin-top: 8px; border-radius: 4px; border: 1px solid var(--md-outline-variant);">
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 16px;">Save Expense</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="activity-product-form" class="activity-screen hidden">
+        <div class="activity-header">
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeActivity('activity-product-form')">close</span>
+            <span style="font-size: 18px; font-weight: 500;">Product Details</span>
+            <span class="material-symbols-outlined tap-target hidden" id="btn-delete-product" onclick="app.deleteRecord('product')" style="color: var(--md-error); margin-left: auto;">delete</span>
+        </div>
+        <div class="activity-content">
+            <form id="form-product">
+                <div class="form-group"><label>Product Name *</label><input type="text" name="name" required></div>
+                
+                <div class="form-group">
+                    <label>Product Image</label>
+                    <input type="file" accept="image/*" onchange="const file = this.files[0]; if(file){ const reader = new FileReader(); reader.onload = function(e){ const img = document.getElementById('product-image-preview'); img.src = e.target.result; img.classList.remove('hidden'); }; reader.readAsDataURL(file); }">
+                    <img id="product-image-preview" class="hidden" style="max-width: 100px; height: auto; margin-top: 8px; border-radius: 4px; border: 1px solid var(--md-outline-variant);">
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 1;"><label>Sell Price (&#8377;) *</label><input type="number" inputmode="decimal" name="sellPrice" min="0" step="any" required></div>
+                    <div class="form-group" style="flex: 1;"><label>Buy Price (&#8377;)</label><input type="number" inputmode="decimal" name="buyPrice" min="0" step="any"></div>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 1;"><label>Opening Stock</label><input type="number" inputmode="decimal" name="stock" value="0" step="any"></div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Unit (UOM) *</label>
+                        <div style="display: flex; gap: 8px;">
+                            <select name="uom" id="product-uom-select" style="flex: 1;" required></select>
+                            <button type="button" class="btn-primary-small" style="padding: 0 8px; border-radius: 8px;" onclick="app.manageSimpleMaster('units', 'Units of Measure')"><span class="material-symbols-outlined" style="font-size: 20px;">edit</span></button>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 1;"><label>Low Stock Alert</label><input type="number" inputmode="decimal" name="minStock" value="5" step="any"></div>
+                    <div class="form-group" style="flex: 1;"><label>GST %</label><input type="number" inputmode="decimal" name="gst" value="0" min="0" max="100" step="any"></div>
+                </div>
+                <div class="form-group"><label>HSN / SAC Code</label><input type="text" name="hsn"></div>
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 16px;">Save Product</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="activity-ledger-form" class="activity-screen hidden">
+        <div class="activity-header">
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeActivity('activity-ledger-form')">close</span>
+            <span style="font-size: 18px; font-weight: 500;">Party Details</span>
+            <span class="material-symbols-outlined tap-target hidden" id="btn-delete-ledger" onclick="app.deleteRecord('ledger')" style="color: var(--md-error); margin-left: auto;">delete</span>
+        </div>
+        <div class="activity-content">
+            <form id="form-ledger">
+                <div class="form-group"><label>Party Name *</label><input type="text" name="name" required></div>
+                <div class="form-group">
+                    <label>Type *</label>
+                    <select name="type" required><option value="Customer">Customer</option><option value="Supplier">Supplier</option></select>
+                </div>
+                <div class="form-group"><label>Phone Number</label><input type="tel" name="phone"></div>
+                <div class="form-group"><label>GSTIN</label><input type="text" name="gst" style="text-transform: uppercase;"></div>
+                
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;"><label>Pincode</label><input type="number" inputmode="decimal" name="pincode" id="ledger-pincode" placeholder="Optional" oninput="if(this.value.length===6) app.fetchPincode(this.value, 'ledger')"></div>
+                    <div class="form-group" style="flex: 2; margin-bottom: 0;"><label>City / District</label><input type="text" name="city" id="ledger-city"></div>
+                </div>
+                <div class="form-group" style="margin-top: 12px;"><label>State</label><input type="text" name="state" id="ledger-state"></div>
+                <div class="form-group"><label>Street Address</label><textarea name="address" id="ledger-address" rows="2" style="width:100%; padding:12px; border:1px solid var(--md-outline-variant); border-radius:8px;"></textarea></div>
+                
+                <div class="m3-card" style="margin-bottom: 16px; background: #e3f2fd;">
+                    <strong style="display:block; margin-bottom:8px; color: var(--md-primary);">Opening Balance</strong>
+                    <div style="display: flex; gap: 12px;">
+                        <div class="form-group" style="flex: 1; margin-bottom: 0;"><label>Amount (&#8377;)</label><input type="number" inputmode="decimal" name="openingBalance" value="0" min="0" step="any"></div>
+                        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                            <label>Balance Type</label>
+                            <select name="balanceType"><option value="To Receive / Debit">To Receive (Debit)</option><option value="To Pay / Credit">To Pay (Credit)</option></select>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%;">Save Party</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="activity-account-form" class="activity-screen hidden">
+        <div class="activity-header">
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeActivity('activity-account-form')">arrow_back</span>
+            <span id="form-title-account" style="font-size: 18px; font-weight: 500;">New Bank/Cash Account</span>
+            <span class="material-symbols-outlined tap-target hidden" id="btn-delete-account" onclick="app.deleteRecord('account')" style="color: var(--md-error); margin-left: auto;">delete</span>
+        </div>
+        <div class="activity-content">
+            <form id="form-account">
+                <div class="form-group"><label>Account Name *</label><input type="text" id="account-name" name="name" placeholder="e.g., HDFC Current" required></div>
+                <div class="form-group">
+                    <label>Account Type *</label>
+                    <select id="account-type" name="type" required>
+                        <option value="Bank">Bank Account</option>
+                        <option value="Cash">Cash Drawer</option>
+                        <option value="Wallet">Digital Wallet</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Account Number / UPI ID</label><input type="text" id="account-number" name="accountNumber"></div>
+                <div class="form-group"><label>Opening Balance (&#8377;)</label><input type="number" inputmode="decimal" id="account-opening-balance" name="openingBalance" step="any" value="0"></div>
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 16px;">Save Account</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="activity-business-profile" class="activity-screen hidden">
+        <div class="activity-header">
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeActivity('activity-business-profile')">arrow_back</span>
+            <span style="font-size: 18px; font-weight: 500;">Business Settings</span>
+        </div>
+        <div class="activity-content">
+            <form id="form-business-profile">
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Business Logo</label>
+                        <input type="file" accept="image/*" onchange="const file = this.files[0]; if(file){ const reader = new FileReader(); reader.onload = function(e){ const img = document.getElementById('profile-logo-preview'); img.src = e.target.result; img.classList.remove('hidden'); }; reader.readAsDataURL(file); }">
+                        <img id="profile-logo-preview" class="hidden" style="max-width: 100px; height: auto; margin-top: 8px; border-radius: 4px; border: 1px solid var(--md-outline-variant);">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Authorized Signature</label>
+                        <input type="file" accept="image/*" onchange="const file = this.files[0]; if(file){ const reader = new FileReader(); reader.onload = function(e){ const img = document.getElementById('profile-signature-preview'); img.src = e.target.result; img.classList.remove('hidden'); }; reader.readAsDataURL(file); }">
+                        <img id="profile-signature-preview" class="hidden" style="max-width: 100px; height: auto; margin-top: 8px; border-radius: 4px; border: 1px solid var(--md-outline-variant);">
+                    </div>
+                </div>
+
+                <div class="form-group"><label>Business Name *</label><input type="text" id="profile-name" required></div>
+                <div class="form-group"><label>Phone Number *</label><input type="tel" id="profile-phone" required></div>
+                <div class="form-group"><label>Email</label><input type="email" id="profile-email"></div>
+                <div class="form-group"><label>GSTIN</label><input type="text" id="profile-gst" style="text-transform: uppercase;"></div>
+                
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;"><label>Pincode</label><input type="number" inputmode="decimal" id="profile-pincode" placeholder="Optional" oninput="if(this.value.length===6) app.fetchPincode(this.value, 'profile')"></div>
+                    <div class="form-group" style="flex: 2; margin-bottom: 0;"><label>City / District</label><input type="text" id="profile-city"></div>
+                </div>
+                <div class="form-group" style="margin-top: 12px;"><label>State (For GST Splitting)</label><input type="text" id="profile-state"></div>
+                <div class="form-group"><label>Street Address</label><textarea id="profile-address" rows="2" style="width:100%; padding:12px; border:1px solid var(--md-outline-variant); border-radius:8px;"></textarea></div>
+                
+                <div class="form-group"><label>Bank Details (For Invoices)</label><textarea id="profile-bank" rows="2" style="width:100%; padding:12px; border:1px solid var(--md-outline-variant); border-radius:8px;"></textarea></div>
+                <div class="form-group"><label>Terms & Conditions</label><textarea id="profile-terms" rows="2" style="width:100%; padding:12px; border:1px solid var(--md-outline-variant); border-radius:8px;"></textarea></div>
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 16px;">Save Settings</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="activity-report-viewer" class="activity-screen hidden">
+        <div class="activity-header" style="background: var(--md-primary-container); color: var(--md-on-primary-container);">
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeActivity('activity-report-viewer')">arrow_back</span>
+            <div style="flex: 1;">
+                <div id="report-party-name" style="font-size: 16px; font-weight: 500;">Party Name</div>
+                <div id="report-party-balance" style="font-size: 14px; color: var(--md-text-muted);">Closing Balance: &#8377;0.00</div>
+            </div>
+            
+            <span id="btn-edit-ledger" class="material-symbols-outlined tap-target" style="margin-right: 12px;">edit</span>
+            
+            <span class="tap-target" onclick="Utils.downloadStatementPDF()" style="display:flex; align-items:center; gap:4px; font-size:14px; font-weight:500;"><span class="material-symbols-outlined">share</span> Share</span>
+        </div>
+        <div class="activity-content" style="background: var(--md-background); padding: 12px;">
+            
+            <div class="search-bar" style="margin-bottom: 16px;">
+                <span class="material-symbols-outlined" style="color: var(--md-outline);">search</span>
+                <input type="text" id="search-timeline" placeholder="Search transactions..." style="flex: 1; min-width: 0;">
+                
+                <div style="width: 1px; height: 20px; background: var(--md-outline-variant); margin: 0 4px;"></div>
+                <span class="material-symbols-outlined tap-target" style="color: var(--md-primary); padding: 6px; border-radius: 50%;" onclick="UI.openBottomSheet('sheet-timeline-filter')">filter_list</span>
+            </div>
+
+            <div id="timeline-list">
+                <p class="empty-state">Loading statement...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="sheet-overlay" class="sheet-overlay hidden" onclick="UI.closeAllBottomSheets()"></div>
+    
+        <div id="sheet-expenses-sort" class="bottom-sheet">
+        <div class="sheet-header">
+            <span style="font-size: 18px; font-weight: 500;">Sort Expenses</span>
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-expenses-sort')">close</span>
+        </div>
+        <div style="padding: 16px;">
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="document.getElementById('sort-expenses').value='date-desc'; UI.applyFilters('expenses'); UI.closeBottomSheet('sheet-expenses-sort');">
+                <div style="background: #e3f2fd; color: #0061a4; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">schedule</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Newest First</strong>
+                    <small style="color:var(--md-text-muted);">Latest expenses at the top</small>
+                </div>
+            </div>
+
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="document.getElementById('sort-expenses').value='date-asc'; UI.applyFilters('expenses'); UI.closeBottomSheet('sheet-expenses-sort');">
+                <div style="background: #fff8e1; color: #f57f17; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">history</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Oldest First</strong>
+                    <small style="color:var(--md-text-muted);">Old expenses at the top</small>
+                </div>
+            </div>
+
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="document.getElementById('sort-expenses').value='amt-desc'; UI.applyFilters('expenses'); UI.closeBottomSheet('sheet-expenses-sort');">
+                <div style="background: #fff0f2; color: #ba1a1a; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">payments</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Highest Amount</strong>
+                    <small style="color:var(--md-text-muted);">Largest expenses at the top</small>
+                </div>
+            </div>
+            
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="document.getElementById('sort-expenses').value='amt-asc'; UI.applyFilters('expenses'); UI.closeBottomSheet('sheet-expenses-sort');">
+                <div style="background: #e8f5e9; color: #146c2e; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">south_east</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Lowest Amount</strong>
+                    <small style="color:var(--md-text-muted);">Smallest expenses at the top</small>
                 </div>
             </div>
         </div>
+    </div>
 
-    </div> <script src="script.js"></script>
+    <div id="sheet-fab-menu" class="bottom-sheet">
+        <div class="sheet-header">
+            <span style="font-size: 18px; font-weight: 500;">Create New</span>
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-fab-menu')">close</span>
+        </div>
+        <div style="padding: 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; text-align: center;">
+            <div class="tap-target" onclick="app.openForm('sales', null, 'invoice')"><div class="icon-circle" style="margin: 0 auto 8px; background: #e3f2fd; color: #0061a4;"><span class="material-symbols-outlined">receipt_long</span></div><small>Sale Inv</small></div>
+            <div class="tap-target" onclick="app.openNewPayment('in')"><div class="icon-circle" style="margin: 0 auto 8px; background: #e8f5e9; color: #2e7d32;"><span class="material-symbols-outlined">payments</span></div><small>Payment In</small></div>
+            <div class="tap-target" onclick="app.openForm('purchase', null, 'invoice')"><div class="icon-circle" style="margin: 0 auto 8px; background: #fbe9e7; color: #d84315;"><span class="material-symbols-outlined">local_shipping</span></div><small>Purchase</small></div>
+            <div class="tap-target" onclick="app.openNewPayment('out')"><div class="icon-circle" style="margin: 0 auto 8px; background: #fff0f2; color: #ba1a1a;"><span class="material-symbols-outlined">outbox</span></div><small>Payment Out</small></div>
+            <div class="tap-target" onclick="app.openForm('expense')"><div class="icon-circle" style="margin: 0 auto 8px; background: #f3e5f5; color: #6a1b9a;"><span class="material-symbols-outlined">account_balance_wallet</span></div><small>Expense</small></div>
+            
+            <div class="tap-target" onclick="app.openForm('sales', null, 'return')"><div class="icon-circle" style="margin: 0 auto 8px; background: #fff0f2; color: #ba1a1a;"><span class="material-symbols-outlined">assignment_return</span></div><small>Credit Note</small></div>
+            <div class="tap-target" onclick="app.openForm('purchase', null, 'return')"><div class="icon-circle" style="margin: 0 auto 8px; background: #e8f5e9; color: #2e7d32;"><span class="material-symbols-outlined">assignment_returned</span></div><small>Debit Note</small></div>
+            
+            <div class="tap-target" onclick="app.openForm('product')"><div class="icon-circle" style="margin: 0 auto 8px; background: var(--md-surface-variant); color: var(--md-on-surface);"><span class="material-symbols-outlined">inventory_2</span></div><small>Product</small></div>
+            <div class="tap-target" onclick="app.openForm('ledger')"><div class="icon-circle" style="margin: 0 auto 8px; background: var(--md-surface-variant); color: var(--md-on-surface);"><span class="material-symbols-outlined">person_add</span></div><small>Party</small></div>
+            
+            <div class="tap-target" onclick="UI.openBottomSheet('sheet-stock-adjustment')"><div class="icon-circle" style="margin: 0 auto 8px; background: #fff8e1; color: #f57f17;"><span class="material-symbols-outlined">build</span></div><small>Adj Stock</small></div>
+            <div class="tap-target" onclick="app.openForm('account')"><div class="icon-circle" style="margin: 0 auto 8px; background: #e0f7fa; color: #006064;"><span class="material-symbols-outlined">account_balance</span></div><small>Bank A/c</small></div>
+        </div>
+    </div>
+
+    <div id="sheet-stock-adjustment" class="bottom-sheet">
+        <div class="sheet-header">
+            <span style="font-size: 18px; font-weight: 500;">Adjust Inventory</span>
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-stock-adjustment')">close</span>
+        </div>
+        <div style="padding: 16px;">
+            <form id="form-stock-adjustment">
+                <div class="form-group">
+                    <label>Select Product *</label>
+                    <select id="adj-product-id" required></select>
+                </div>
+                
+                <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                        <label>Adjustment Type *</label>
+                        <select id="adj-type" required>
+                            <option value="add">Add Stock (+)</option>
+                            <option value="reduce">Reduce Stock (-)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                        <label>Quantity *</label>
+                        <input type="number" inputmode="decimal" id="adj-qty" min="0.01" step="any" required>
+                    </div>
+                </div>
+                
+                <div class="form-group"><label>Date *</label><input type="date" id="adj-date" required></div>
+                <div class="form-group"><label>Reason / Notes *</label><input type="text" id="adj-notes" placeholder="e.g., Damaged, Audit Correction" required></div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 16px;">Save Adjustment</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="sheet-master-sort" class="bottom-sheet">
+        <div class="sheet-header">
+            <span style="font-size: 18px; font-weight: 500;">Sort & Filter</span>
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-master-sort')">close</span>
+        </div>
+        <div style="padding: 16px;">
+            <div class="form-group">
+                <label>Filter By Status</label>
+                <select id="filter-master-view" onchange="UI.applyFilters('masters')">
+                    <option value="All">All Records</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Sort By</label>
+                <select id="sort-master-view" onchange="UI.applyFilters('masters')">
+                    <option value="name-asc">A to Z</option>
+                    <option value="stock-asc">Lowest Stock First</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div id="sheet-cashbook-sort" class="bottom-sheet">
+        <div class="sheet-header">
+            <span style="font-size: 18px; font-weight: 500;">Sort Transactions</span>
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-cashbook-sort')">close</span>
+        </div>
+        <div style="padding: 16px;">
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="document.getElementById('sort-cashbook').value='date-desc'; UI.applyFilters('cashbook'); UI.closeBottomSheet('sheet-cashbook-sort');">
+                <div style="background: #e3f2fd; color: #0061a4; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">schedule</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Newest First</strong>
+                    <small style="color:var(--md-text-muted);">Latest transactions at the top</small>
+                </div>
+            </div>
+
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="document.getElementById('sort-cashbook').value='date-asc'; UI.applyFilters('cashbook'); UI.closeBottomSheet('sheet-cashbook-sort');">
+                <div style="background: #fff8e1; color: #f57f17; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">history</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Oldest First</strong>
+                    <small style="color:var(--md-text-muted);">Old transactions at the top</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sheet-cashbook-filter" class="bottom-sheet">
+        <div class="sheet-header">
+            <span style="font-size: 18px; font-weight: 500;">Filter Transactions</span>
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-cashbook-filter')">close</span>
+        </div>
+        <div style="padding: 16px;">
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="UI.setFilter('cashbook', 'All', null); UI.closeBottomSheet('sheet-cashbook-filter');">
+                <div style="background: var(--md-surface-variant); color: var(--md-on-surface-variant); width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">account_balance_wallet</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">All Transactions</strong>
+                    <small style="color:var(--md-text-muted);">Show everything</small>
+                </div>
+            </div>
+
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="UI.setFilter('cashbook', 'In', null); UI.closeBottomSheet('sheet-cashbook-filter');">
+                <div style="background: #e8f5e9; color: #146c2e; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">south_west</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Money In</strong>
+                    <small style="color:var(--md-text-muted);">Only show receipts & income</small>
+                </div>
+            </div>
+
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="UI.setFilter('cashbook', 'Out', null); UI.closeBottomSheet('sheet-cashbook-filter');">
+                <div style="background: #fff0f2; color: #ba1a1a; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">north_east</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Money Out</strong>
+                    <small style="color:var(--md-text-muted);">Only show payments & expenses</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sheet-sales-filter" class="bottom-sheet">
+        <div class="sheet-header">
+            <span style="font-size: 18px; font-weight: 500;">Filter Sales Invoices</span>
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-sales-filter')">close</span>
+        </div>
+        <div style="padding: 16px;">
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="UI.setFilter('sales', 'All', null); UI.closeBottomSheet('sheet-sales-filter');">
+                <div style="background: var(--md-surface-variant); color: var(--md-on-surface-variant); width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">receipt_long</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">All Invoices</strong>
+                    <small style="color:var(--md-text-muted);">Show everything</small>
+                </div>
+            </div>
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="UI.setFilter('sales', 'Open', null); UI.closeBottomSheet('sheet-sales-filter');">
+                <div style="background: #fff0f2; color: #ba1a1a; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">pending_actions</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Open (Draft)</strong>
+                    <small style="color:var(--md-text-muted);">Pending invoices</small>
+                </div>
+            </div>
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="UI.setFilter('sales', 'Shipped', null); UI.closeBottomSheet('sheet-sales-filter');">
+                <div style="background: #fff8e1; color: #f57f17; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">local_shipping</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Shipped</strong>
+                    <small style="color:var(--md-text-muted);">In-transit orders</small>
+                </div>
+            </div>
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="UI.setFilter('sales', 'Completed', null); UI.closeBottomSheet('sheet-sales-filter');">
+                <div style="background: #e8f5e9; color: #146c2e; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">check_circle</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Completed</strong>
+                    <small style="color:var(--md-text-muted);">Fully delivered invoices</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sheet-purchases-filter" class="bottom-sheet">
+        <div class="sheet-header">
+            <span style="font-size: 18px; font-weight: 500;">Filter Purchases</span>
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-purchases-filter')">close</span>
+        </div>
+        <div style="padding: 16px;">
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="UI.setFilter('purchases', 'All', null); UI.closeBottomSheet('sheet-purchases-filter');">
+                <div style="background: var(--md-surface-variant); color: var(--md-on-surface-variant); width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">receipt_long</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">All POs & Bills</strong>
+                    <small style="color:var(--md-text-muted);">Show everything</small>
+                </div>
+            </div>
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="UI.setFilter('purchases', 'To Pay', null); UI.closeBottomSheet('sheet-purchases-filter');">
+                <div style="background: #fff0f2; color: #ba1a1a; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">payments</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">To Pay</strong>
+                    <small style="color:var(--md-text-muted);">Pending payment</small>
+                </div>
+            </div>
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="UI.setFilter('purchases', 'Completed', null); UI.closeBottomSheet('sheet-purchases-filter');">
+                <div style="background: #e8f5e9; color: #146c2e; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">check_circle</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Completed</strong>
+                    <small style="color:var(--md-text-muted);">Fully received & paid</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sheet-sales-sort" class="bottom-sheet">
+        <div class="sheet-header">
+            <span style="font-size: 18px; font-weight: 500;">Sort Sales Invoices</span>
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-sales-sort')">close</span>
+        </div>
+        <div style="padding: 16px;">
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="document.getElementById('sort-sales').value='date-desc'; UI.applyFilters('sales'); UI.closeBottomSheet('sheet-sales-sort');">
+                <div style="background: #e3f2fd; color: #0061a4; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">schedule</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Newest First</strong>
+                    <small style="color:var(--md-text-muted);">Latest invoices at the top</small>
+                </div>
+            </div>
+
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="document.getElementById('sort-sales').value='date-asc'; UI.applyFilters('sales'); UI.closeBottomSheet('sheet-sales-sort');">
+                <div style="background: #fff8e1; color: #f57f17; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">history</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Oldest First</strong>
+                    <small style="color:var(--md-text-muted);">Old invoices at the top</small>
+                </div>
+            </div>
+
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="document.getElementById('sort-sales').value='amt-desc'; UI.applyFilters('sales'); UI.closeBottomSheet('sheet-sales-sort');">
+                <div style="background: #e8f5e9; color: #146c2e; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">payments</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Highest Amount</strong>
+                    <small style="color:var(--md-text-muted);">Largest invoices at the top</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sheet-purchases-sort" class="bottom-sheet">
+        <div class="sheet-header">
+            <span style="font-size: 18px; font-weight: 500;">Sort Purchase Bills</span>
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-purchases-sort')">close</span>
+        </div>
+        <div style="padding: 16px;">
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="document.getElementById('sort-purchases').value='date-desc'; UI.applyFilters('purchases'); UI.closeBottomSheet('sheet-purchases-sort');">
+                <div style="background: #e3f2fd; color: #0061a4; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">schedule</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Newest First</strong>
+                    <small style="color:var(--md-text-muted);">Latest bills at the top</small>
+                </div>
+            </div>
+
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="document.getElementById('sort-purchases').value='date-asc'; UI.applyFilters('purchases'); UI.closeBottomSheet('sheet-purchases-sort');">
+                <div style="background: #fff8e1; color: #f57f17; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">history</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Oldest First</strong>
+                    <small style="color:var(--md-text-muted);">Old bills at the top</small>
+                </div>
+            </div>
+
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px;" onclick="document.getElementById('sort-purchases').value='amt-desc'; UI.applyFilters('purchases'); UI.closeBottomSheet('sheet-purchases-sort');">
+                <div style="background: #e8f5e9; color: #146c2e; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">payments</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Highest Amount</strong>
+                    <small style="color:var(--md-text-muted);">Largest bills at the top</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="sheet-payment-in" class="bottom-sheet">
+        <div class="sheet-header">
+            <span style="font-size: 18px; font-weight: 500;">Payment Received In</span>
+            <div style="display: flex; gap: 16px; margin-left: auto; align-items: center;">
+                <span class="material-symbols-outlined tap-target hidden" id="btn-delete-receipt-in" onclick="app.deleteRecord('receipt-in')" style="color: var(--md-error);">delete</span>
+                <span class="tap-target" onclick="Utils.generateReceiptPDF(app.state.currentReceiptId)" style="display:flex; align-items:center; gap:4px; color:var(--md-primary); font-size:14px; font-weight:500;"><span class="material-symbols-outlined">share</span> Share</span>
+                <span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-payment-in')">close</span>
+            </div>
+        </div>
+        <div style="padding: 16px; overflow-y: auto; max-height: 70vh;">
+            <form id="form-payment-in">
+                <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;"><label>Receipt No *</label><input type="text" id="pay-in-no" required></div>
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;"><label>Date *</label><input type="date" id="pay-in-date" required></div>
+                </div>
+                <div class="m3-card tap-target" style="margin-bottom: 12px; background: var(--md-surface-variant); display: flex; justify-content: space-between; align-items: center;" onclick="if(window.UI){ window.UI.state.currentPrefix = 'pay-in'; window.UI.openBottomSheet('sheet-customers'); }">
+                    <div>
+                        <small style="color: var(--md-text-muted);">Customer (Received From) *</small>
+                        <div id="pay-in-customer-display" class="large-text" style="color: var(--md-text-muted);">Select Customer...</div>
+                        <input type="hidden" id="pay-in-customer" required>
+                    </div>
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </div>
+                
+                <div class="form-group" style="background: #e3f2fd; padding: 8px; border-radius: 8px; border: 1px solid var(--md-primary);">
+                    <label style="color: var(--md-primary);">Settle Pending Invoice(s)</label>
+                    <select id="pay-in-invoice-ref" multiple size="4" style="height: auto; min-height: 80px; padding: 4px; font-size: 14px;">
+                        <option value="">On Account / Advance</option>
+                    </select>
+                    <small style="display:block; margin-top:4px; color:var(--md-text-muted); font-size: 10px;">Hold Ctrl/Cmd or drag to select multiple (Tap multiple on mobile)</small>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 1;"><label>Amount (&#8377;) *</label><input type="number" inputmode="decimal" id="pay-in-amount" min="0" step="any" required></div>
+                    
+                    <div class="form-group" style="flex: 1;">
+                        <label>Mode *</label>
+                        <input type="text" id="pay-in-mode" value="Cash" required>
+                        <div class="filter-chips" style="margin-top: 6px; padding-bottom: 0;">
+                            <div class="chip" style="padding: 4px 10px; font-size: 11px;" onclick="document.getElementById('pay-in-mode').value='Cash'">Cash</div>
+                            <div class="chip" style="padding: 4px 10px; font-size: 11px;" onclick="document.getElementById('pay-in-mode').value='UPI'">UPI</div>
+                            <div class="chip" style="padding: 4px 10px; font-size: 11px;" onclick="document.getElementById('pay-in-mode').value='Bank'">Bank</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Deposit To Account *</label>
+                    <select id="pay-in-account" required><option value="cash">Cash Drawer</option></select>
+                </div>
+                <div class="form-group"><label>Reference / UTR</label><input type="text" id="pay-in-ref"></div>
+                <div class="form-group"><label>Notes</label><input type="text" id="pay-in-notes" placeholder="Optional notes"></div>
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 16px; background: var(--md-success);">Save Receipt</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="sheet-payment-out" class="bottom-sheet">
+        <div class="sheet-header">
+            <span style="font-size: 18px; font-weight: 500;">Payment Made Out</span>
+            <div style="display: flex; gap: 16px; margin-left: auto; align-items: center;">
+                <span class="material-symbols-outlined tap-target hidden" id="btn-delete-receipt-out" onclick="app.deleteRecord('receipt-out')" style="color: var(--md-error);">delete</span>
+                <span class="tap-target" onclick="Utils.generateReceiptPDF(app.state.currentReceiptId)" style="display:flex; align-items:center; gap:4px; color:var(--md-primary); font-size:14px; font-weight:500;"><span class="material-symbols-outlined">share</span> Share</span>
+                <span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-payment-out')">close</span>
+            </div>
+        </div>
+        <div style="padding: 16px; overflow-y: auto; max-height: 70vh;">
+            <form id="form-payment-out">
+                <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;"><label>Voucher No *</label><input type="text" id="pay-out-no" required></div>
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;"><label>Date *</label><input type="date" id="pay-out-date" required></div>
+                </div>
+                <div class="m3-card tap-target" style="margin-bottom: 12px; background: var(--md-surface-variant); display: flex; justify-content: space-between; align-items: center;" onclick="if(window.UI){ window.UI.state.currentPrefix = 'pay-out'; window.UI.openBottomSheet('sheet-suppliers'); }">
+                    <div>
+                        <small style="color: var(--md-text-muted);">Supplier (Paid To) *</small>
+                        <div id="pay-out-supplier-display" class="large-text" style="color: var(--md-text-muted);">Select Supplier...</div>
+                        <input type="hidden" id="pay-out-supplier" required>
+                    </div>
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </div>
+                
+                <div class="form-group" style="background: #fff0f2; padding: 8px; border-radius: 8px; border: 1px solid var(--md-error);">
+                    <label style="color: var(--md-error);">Settle Pending Bill / PO(s)</label>
+                    <select id="pay-out-invoice-ref" multiple size="4" style="height: auto; min-height: 80px; padding: 4px; font-size: 14px;">
+                        <option value="">On Account / Advance</option>
+                    </select>
+                    <small style="display:block; margin-top:4px; color:var(--md-text-muted); font-size: 10px;">Hold Ctrl/Cmd or drag to select multiple (Tap multiple on mobile)</small>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 1;"><label>Amount (&#8377;) *</label><input type="number" inputmode="decimal" id="pay-out-amount" min="0" step="any" required></div>
+                    
+                    <div class="form-group" style="flex: 1;">
+                        <label>Mode *</label>
+                        <input type="text" id="pay-out-mode" value="Cash" required>
+                        <div class="filter-chips" style="margin-top: 6px; padding-bottom: 0;">
+                            <div class="chip" style="padding: 4px 10px; font-size: 11px;" onclick="document.getElementById('pay-out-mode').value='Cash'">Cash</div>
+                            <div class="chip" style="padding: 4px 10px; font-size: 11px;" onclick="document.getElementById('pay-out-mode').value='UPI'">UPI</div>
+                            <div class="chip" style="padding: 4px 10px; font-size: 11px;" onclick="document.getElementById('pay-out-mode').value='Bank'">Bank</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Paid From Account *</label>
+                    <select id="pay-out-account" required><option value="cash">Cash Drawer</option></select>
+                </div>
+                <div class="form-group"><label>Reference / UTR</label><input type="text" id="pay-out-ref"></div>
+                <div class="form-group"><label>Notes</label><input type="text" id="pay-out-notes" placeholder="Optional notes"></div>
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 16px; background: var(--md-error);">Save Payment</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="sheet-customers" class="bottom-sheet" style="height: 80vh;">
+        <div class="sheet-header"><span style="font-size: 18px; font-weight: 500;">Select Customer</span><span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-customers')">close</span></div>
+        <div style="padding: 16px; height: calc(100% - 60px); display: flex; flex-direction: column;">
+            <div class="search-bar"><span class="material-symbols-outlined">search</span><input type="text" id="search-customers" placeholder="Search customers..."></div>
+            <ul class="list-view" id="list-customers" style="flex: 1; overflow-y: auto;"></ul>
+            <button class="btn-primary-small mt-2" style="width: 100%;" onclick="UI.closeBottomSheet('sheet-customers'); app.openForm('ledger')">+ New Customer</button>
+        </div>
+    </div>
+
+    <div id="sheet-suppliers" class="bottom-sheet" style="height: 80vh;">
+        <div class="sheet-header"><span style="font-size: 18px; font-weight: 500;">Select Supplier</span><span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-suppliers')">close</span></div>
+        <div style="padding: 16px; height: calc(100% - 60px); display: flex; flex-direction: column;">
+            <div class="search-bar"><span class="material-symbols-outlined">search</span><input type="text" id="search-suppliers" placeholder="Search suppliers..."></div>
+            <ul class="list-view" id="list-suppliers" style="flex: 1; overflow-y: auto;"></ul>
+            <button class="btn-primary-small mt-2" style="width: 100%;" onclick="UI.closeBottomSheet('sheet-suppliers'); app.openForm('ledger')">+ New Supplier</button>
+        </div>
+    </div>
+
+    <div id="sheet-products" class="bottom-sheet" style="height: 85vh;">
+        <div class="sheet-header"><span style="font-size: 18px; font-weight: 500;">Add Products</span><span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-products')">close</span></div>
+        <div style="padding: 16px; height: calc(100% - 60px); display: flex; flex-direction: column;">
+            <div class="search-bar"><span class="material-symbols-outlined">search</span><input type="text" id="search-products" placeholder="Search products..."></div>
+            <ul class="list-view" id="list-products" style="flex: 1; overflow-y: auto;"></ul>
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+                <button class="btn-primary-small" style="flex: 1; background: var(--md-surface-variant); color: var(--md-on-surface);" onclick="UI.closeBottomSheet('sheet-products'); app.openForm('product')">+ New Product</button>
+                <button class="btn-primary" style="flex: 2;" onclick="UI.confirmProducts()">Add Selected</button>
+            </div>
+        </div>
+    </div>
+        <div id="sheet-linked-docs" class="bottom-sheet" style="height: 85vh;">
+        <div class="sheet-header">
+            <span style="font-size: 18px; font-weight: 500;">Link to Document(s)</span>
+            <div style="display: flex; gap: 16px; align-items: center;">
+                <button class="btn-primary-small" onclick="UI.closeBottomSheet('sheet-linked-docs')">Done</button>
+                <span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-linked-docs')">close</span>
+            </div>
+        </div>
+        <div style="padding: 16px; height: calc(100% - 60px); display: flex; flex-direction: column;">
+            <div class="search-bar"><span class="material-symbols-outlined">search</span><input type="text" id="search-linked-docs" placeholder="Search Order No or Inv No..." oninput="app.filterLinkedDocs(this.value)"></div>
+            <div class="tap-target m3-card" style="background: var(--md-surface-variant); text-align: center; font-weight: 500; color: var(--md-primary);" onclick="app.selectLinkedDoc('', '-- No Link (General Expense) --')">Clear Link / General Expense</div>
+            <ul class="list-view" id="list-linked-docs" style="flex: 1; overflow-y: auto;"></ul>
+        </div>
+    </div>
+    <div id="activity-gst-report" class="activity-screen hidden">
+        <div class="activity-header">
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeActivity('activity-gst-report')">arrow_back</span>
+            <span style="font-size: 18px; font-weight: 500;">Monthly GST Report</span>
+            <div style="display: flex; gap: 16px; margin-left: auto; align-items: center;">
+                <span class="tap-target" id="btn-export-gst" style="display:flex; align-items:center; gap:4px; color:var(--md-primary); font-size:14px; font-weight:500;">
+                    <span class="material-symbols-outlined">download</span> Export CSV
+                </span>
+            </div>
+        </div>
+        <div class="activity-content" style="background-color: #f4f6fa; padding: 16px; overflow-y: auto;">
+            
+            <div class="m3-card" style="margin-bottom: 20px; display: flex; align-items: center; gap: 12px; padding: 12px 16px;">
+                <label style="font-weight: 500; color: #43474e;">Select Month:</label>
+                <input type="month" id="gst-month-selector" style="flex: 1; padding: 8px; border: 1px solid #c3c7cf; border-radius: 4px; font-size: 16px;" onchange="app.refreshGSTReport()">
+            </div>
+
+            <h3 style="margin-top:0; color: #0061a4; font-size: 16px; text-transform: uppercase;">GSTR-3B (Net Summary)</h3>
+            <div class="m3-card" style="margin-bottom: 24px; padding: 16px;">
+                <div style="display:flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #43474e;">Output Tax (Total Sales):</span> <strong style="color:var(--md-error);" id="gst-out-tax">&#8377;0.00</strong>
+                </div>
+                <div style="display:flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #43474e;">Input Tax (Purchases / ITC):</span> <strong style="color:var(--md-success);" id="gst-in-tax">&#8377;0.00</strong>
+                </div>
+                <hr style="border: 0; border-top: 1px dashed #c3c7cf; margin: 12px 0;">
+                <div style="display:flex; justify-content: space-between; align-items: center;">
+                    <strong style="color: #1a1c1e;">Net Payable to Govt:</strong> <strong style="font-size: 20px; color:#0061a4;" id="gst-net-payable">&#8377;0.00</strong>
+                </div>
+            </div>
+
+            <h3 style="margin-top:0; color: #0061a4; font-size: 16px; text-transform: uppercase;">GSTR-1 (Sales Breakdown)</h3>
+            <div class="m3-card" style="margin-bottom: 24px; padding: 16px;">
+                <div style="display:flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #43474e;">B2B Taxable Value:</span> <strong id="gst-b2b-taxable" style="color: #1a1c1e;">&#8377;0.00</strong>
+                </div>
+                <div style="display:flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #43474e;">B2B Tax Collected:</span> <strong id="gst-b2b-tax" style="color: #1a1c1e;">&#8377;0.00</strong>
+                </div>
+                <hr style="border: 0; border-top: 1px solid #e0e0e0; margin: 12px 0;">
+                <div style="display:flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #43474e;">B2C Taxable Value:</span> <strong id="gst-b2c-taxable" style="color: #1a1c1e;">&#8377;0.00</strong>
+                </div>
+                <div style="display:flex; justify-content: space-between;">
+                    <span style="color: #43474e;">B2C Tax Collected:</span> <strong id="gst-b2c-tax" style="color: #1a1c1e;">&#8377;0.00</strong>
+                </div>
+            </div>
+            
+            <p style="text-align:center; font-size:12px; color:#73777f; margin-top:10px;">Click 'Export CSV' at the top to send the detailed B2B ledger to your CA.</p>
+        </div>
+    </div>
+
+    <div id="activity-advanced-reports" class="activity-screen hidden">
+        <div class="activity-header">
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeActivity('activity-advanced-reports')">arrow_back</span>
+            <span style="font-size: 18px; font-weight: 500;">Advanced Reports</span>
+        </div>
+        <div class="activity-content" style="background-color: var(--md-background); padding: 16px; overflow-y: auto;">
+            
+            <div style="display: flex; gap: 8px; margin-bottom: 16px; background: var(--md-surface-variant); padding: 4px; border-radius: 8px;">
+                <div id="btn-tab-daybook" class="tap-target" style="flex: 1; text-align: center; padding: 8px; background: var(--md-surface); border-radius: 6px; font-weight: bold; box-shadow: var(--elevation-1);" onclick="UI.switchReportTab('daybook')">Day Book</div>
+                <div id="btn-tab-pnl" class="tap-target" style="flex: 1; text-align: center; padding: 8px; border-radius: 6px; font-weight: bold;" onclick="UI.switchReportTab('pnl')">Profit & Loss</div>
+            </div>
+
+            <div id="view-daybook">
+                <div class="m3-card" style="padding: 12px; margin-bottom: 16px;">
+                    <label style="font-weight: 500; font-size: 12px; color: var(--md-primary);">Select Date</label>
+                    <input type="date" id="report-daybook-date" style="border: none; padding: 4px 0; font-size: 16px; font-weight: bold;" onchange="UI.renderDayBook()">
+                </div>
+                <div id="daybook-container"></div>
+            </div>
+
+            <div id="view-pnl" class="hidden">
+                <div class="m3-card" style="padding: 12px; margin-bottom: 16px; display: flex; gap: 12px;">
+                    <div style="flex: 1;">
+                        <label style="font-weight: 500; font-size: 12px; color: var(--md-primary);">From Date</label>
+                        <input type="date" id="report-pnl-start" style="border: none; padding: 4px 0; width: 100%;" onchange="UI.renderPnL()">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-weight: 500; font-size: 12px; color: var(--md-primary);">To Date</label>
+                        <input type="date" id="report-pnl-end" style="border: none; padding: 4px 0; width: 100%;" onchange="UI.renderPnL()">
+                    </div>
+                </div>
+                <div id="pnl-container"></div>
+            </div>
+            
+        </div>
+    </div>
+
+    <div id="sheet-timeline-filter" class="bottom-sheet">
+        <div class="sheet-header">
+            <span style="font-size: 18px; font-weight: 500;">Filter Transactions</span>
+            <span class="material-symbols-outlined tap-target" onclick="UI.closeBottomSheet('sheet-timeline-filter')">close</span>
+        </div>
+        <div style="padding: 16px;">
+            
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap:16px; margin-bottom:12px;" onclick="UI.setFilter('timeline', 'All', null); UI.closeBottomSheet('sheet-timeline-filter');">
+                <div class="icon-circle" style="background:var(--md-surface-variant); color:var(--md-on-surface-variant);"><span class="material-symbols-outlined">list</span></div>
+                <div><strong>All Entries</strong><small style="display:block; color:var(--md-text-muted);">Show full history</small></div>
+            </div>
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap:16px; margin-bottom:12px;" onclick="UI.setFilter('timeline', 'Money In', null); UI.closeBottomSheet('sheet-timeline-filter');">
+                <div class="icon-circle" style="background:#e8f5e9; color:#146c2e;"><span class="material-symbols-outlined">arrow_downward</span></div>
+                <div><strong>Money In</strong><small style="display:block; color:var(--md-text-muted);">Receipts & Income</small></div>
+            </div>
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap:16px; margin-bottom:12px;" onclick="UI.setFilter('timeline', 'Money Out', null); UI.closeBottomSheet('sheet-timeline-filter');">
+                <div class="icon-circle" style="background:#fff0f2; color:#ba1a1a;"><span class="material-symbols-outlined">arrow_upward</span></div>
+                <div><strong>Money Out</strong><small style="display:block; color:var(--md-text-muted);">Payments & Bills</small></div>
+            </div>
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap:16px; margin-bottom:16px;" onclick="UI.setFilter('timeline', 'Expenses', null); UI.closeBottomSheet('sheet-timeline-filter');">
+                <div class="icon-circle" style="background:#fff8e1; color:#f57f17;"><span class="material-symbols-outlined">payments</span></div>
+                <div><strong>Expenses Only</strong><small style="display:block; color:var(--md-text-muted);">Direct business costs</small></div>
+            </div>
+            
+            <hr style="border:0; border-top:1px dashed var(--md-outline-variant); margin:0 0 16px 0;">
+            
+            <strong style="display:block; margin-bottom:8px; color:var(--md-primary);">Filter by Date Range</strong>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="flex: 1;"><input type="date" id="timeline-start-date" style="width: 100%; padding: 8px; border: 1px solid var(--md-outline-variant); border-radius: 8px;"></div>
+                <span style="color:var(--md-text-muted);">to</span>
+                <div style="flex: 1;"><input type="date" id="timeline-end-date" style="width: 100%; padding: 8px; border: 1px solid var(--md-outline-variant); border-radius: 8px;"></div>
+            </div>
+            <button class="btn-primary" style="width: 100%; margin-top: 12px;" onclick="UI.applyFilters('timeline'); UI.closeBottomSheet('sheet-timeline-filter');">Apply Date Filter</button>
+        </div>
+    </div>
+
+    <div id="print-area" class="print-only"></div>
+    
+    <div id="success-animation" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9999; display:flex; justify-content:center; align-items:center;">
+        <div class="success-circle">
+            <span class="material-symbols-outlined check-mark">check</span>
+        </div>
+    </div>
+
+    <div id="sheet-master-actions" class="bottom-sheet hidden">
+        <div class="sheet-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;">Advanced Actions</h3>
+                <span class="material-symbols-outlined tap-target" onclick="if(window.UI) window.UI.closeBottomSheet('sheet-master-actions')">close</span>
+            </div>
+            
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px; cursor:pointer;" onclick="if(window.UI) window.UI.closeBottomSheet('sheet-master-actions'); if(window.app) window.app.downloadCSVTemplate();">
+                <div style="background: #e3f2fd; color: #0061a4; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">download</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Download CSV Template</strong>
+                    <small style="color:var(--md-text-muted);">Get the blank file for bulk data</small>
+                </div>
+            </div>
+
+            <div class="m3-card tap-target" style="display:flex; align-items:center; gap: 16px; margin-bottom: 12px; cursor:pointer;" onclick="if(window.UI) window.UI.closeBottomSheet('sheet-master-actions'); document.getElementById('csv-import-file').click();">
+                <div style="background: #e8f5e9; color: #146c2e; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                    <span class="material-symbols-outlined">upload</span>
+                </div>
+                <div>
+                    <strong style="display:block; font-size:16px;">Import Data (CSV)</strong>
+                    <small style="color:var(--md-text-muted);">Upload your filled template</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="update-banner" class="hidden" style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--md-surface-variant); color: var(--md-on-surface); padding: 12px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999; display: flex; align-items: center; gap: 16px; min-width: 320px; justify-content: space-between;">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span class="material-symbols-outlined" style="color: var(--md-primary);">system_update</span>
+            <div>
+                <strong style="display:block; font-size:14px;">Update Available</strong>
+                <small style="color:var(--md-text-muted); font-size:12px;">A new version is ready.</small>
+            </div>
+        </div>
+        <button onclick="window.applyAppUpdate()" class="tap-target" style="background:var(--md-primary); color:var(--md-on-primary); border:none; padding:8px 16px; border-radius:20px; font-weight:bold; cursor:pointer;">Reload</button>
+    </div>
+
+    <div id="sheet-install-app" class="bottom-sheet hidden">
+        <div class="sheet-content" style="text-align: center; padding: 32px 24px 24px 24px;">
+            <div style="background: #e3f2fd; width: 64px; height: 64px; border-radius: 16px; display: flex; justify-content: center; align-items: center; margin: 0 auto 16px auto;">
+                <img src="icon-192.png" alt="SOLLO Icon" style="width: 40px; height: 40px;">
+            </div>
+            <h2 style="margin: 0 0 8px 0; font-size: 22px;">Install SOLLO ERP</h2>
+            <p style="color: var(--md-text-muted); margin: 0 0 24px 0; font-size:14px;">Add this app to your home screen for instant offline access, full-screen mode, and faster performance.</p>
+            <button class="btn-primary tap-target" style="width: 100%; margin-bottom: 12px; padding: 14px; font-size: 16px;" onclick="window.triggerAppInstall()">Install App</button>
+            <button class="btn-secondary tap-target" style="width: 100%; padding: 14px; font-size: 16px; background: transparent; border: 1px solid var(--md-outline-variant);" onclick="if(window.UI) window.UI.closeBottomSheet('sheet-install-app')">Not Now</button>
+        </div>
+    </div>
+    <div id="toast-container"></div>
+    
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+    <script src="cloud.js?v=3"></script>
+
+    <script type="module" src="app.js?v=3"></script>
+    <script>
+        // UPGRADE 4: PWA Custom Install Prompt Engine
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); 
+            deferredPrompt = e;
+            setTimeout(() => {
+                if (window.UI) window.UI.openBottomSheet('sheet-install-app');
+            }, 4000);
+        });
+
+        window.triggerAppInstall = async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                if (window.UI) window.UI.closeBottomSheet('sheet-install-app');
+            }
+        };
+
+        // UPGRADE 2: Service Worker & Update Listener
+        let newWorker;
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(reg => {
+                    // Listen for updates from Netlify
+                    reg.addEventListener('updatefound', () => {
+                        newWorker = reg.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                const banner = document.getElementById('update-banner');
+                                if (banner) banner.classList.remove('hidden');
+                            }
+                        });
+                    });
+                });
+            });
+
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    window.location.reload();
+                    refreshing = true;
+                }
+            });
+        }
+
+        window.applyAppUpdate = () => {
+            if (newWorker) newWorker.postMessage({ type: 'SKIP_WAITING' });
+            setTimeout(() => window.location.reload(), 500); 
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // UPGRADE: Trigger Silent Background Backup Check on Boot
+            setTimeout(() => {
+                if (window.Cloud && typeof window.Cloud.autoBackup === 'function') {
+                    window.Cloud.autoBackup();
+                }
+            }, 5000); // Wait 5 seconds so it doesn't slow down the app startup
+
+            const today = typeof Utils !== 'undefined' && Utils.getLocalDate ? Utils.getLocalDate() : new Date().toISOString().split('T')[0];
+            const dateInputs = [
+                'sales-date', 'sales-order-date', 'sales-shipped-date', 'sales-completed-date', 
+                'purchase-date', 'purchase-order-date', 'purchase-shipped-date', 'purchase-completed-date', 
+                'expense-date', 'pay-in-date', 'pay-out-date', 'adj-date'
+            ];
+            dateInputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (!el.value) el.value = today;
+                    
+                    // Initialize the Custom Date Picker
+                    flatpickr(el, {
+                        dateFormat: "Y-m-d",
+                        defaultDate: el.value || today,
+                        disableMobile: "true" 
+                    });
+                }
+            });
+
+            // UPGRADE 4: Smart Offline / Online Listener
+            const banner = document.getElementById('offline-banner');
+            window.addEventListener('offline', () => {
+                banner.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px; margin-right: 6px;">wifi_off</span>Working Offline - Changes saved locally';
+                banner.classList.remove('online');
+                banner.classList.add('show');
+            });
+            window.addEventListener('online', () => {
+                banner.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px; margin-right: 6px;">wifi</span>Back Online - Syncing available';
+                banner.classList.add('online');
+                setTimeout(() => banner.classList.remove('show'), 3000); // Hide after 3 seconds
+            });
+
+            // Check initial state
+            if (!navigator.onLine) {
+                banner.classList.add('show');
+            }
+        });
+    </script>
 </body>
 </html>
