@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0A56D9">
+    
+    <title>Courier Cover Printer</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet" />
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+    <style>
+        /* Completely hides the app until fully loaded to prevent raw text flashing */
+        .app-wrapper { display: none; }
+        body.app-loaded .app-wrapper { display: block; }
+        
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #0A56D9; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; z-index: 99999; color: white;
+            transition: opacity 0.3s ease-out;
+        }
+        .splash-title { font-family: 'Roboto', sans-serif; font-size: 28px; font-weight: 700; margin-top: 16px; letter-spacing: 0.5px; }
+        .spinner {
+            width: 40px; height: 40px; margin-top: 30px; border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        body.app-loaded #splash-screen { opacity: 0; pointer-events: none; }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let splashRemoved = false;
+            const hideSplash = () => {
+                if (splashRemoved) return;
+                splashRemoved = true;
+                document.body.classList.add('app-loaded');
+                setTimeout(() => {
+                    const splash = document.getElementById('splash-screen');
+                    if (splash) splash.remove();
+                }, 300); 
+            };
+            window.addEventListener('load', hideSplash);
+            setTimeout(hideSplash, 1500); // 1.5s forced override
+        });
+    </script>
+</head>
+<body>
+
+    <div id="splash-screen">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="white">
+            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+        </svg>
+        <div class="splash-title">Cover Printer</div>
+        <div class="spinner"></div>
+    </div>
+    
+    <div class="app-wrapper">
+        
+        <header class="app-header">
+            <div class="header-title">
+                <span class="material-symbols-rounded">mark_email_unread</span>
+                Cover Printer
+            </div>
+            <div class="header-actions">
+                <button id="view-ledger-btn" class="icon-btn" aria-label="History">
+                    <span class="material-symbols-rounded">history</span>
+                </button>
+                <button id="manage-clients-btn" class="icon-btn" aria-label="Address Book">
+                    <span class="material-symbols-rounded">contacts</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="app-content">
+            
+            <div class="md-card">
+                <div class="card-title-wrap mb-4">
+                    <span class="material-symbols-rounded icon-primary">person</span>
+                    <h3 class="card-title">Recipient Details</h3>
+                </div>
+
+                <div class="row-gap mb-4">
+                    <div class="input-group flex-1">
+                        <label class="md-label">Document Stamp</label>
+                        <select id="doc-stamp-select" class="md-input">
+                            <option value="TAX INVOICE" selected>TAX INVOICE</option>
+                            <option value="DELIVERY CHALLAN">DELIVERY CHALLAN</option>
+                            <option value="PURCHASE RETURN">PURCHASE RETURN</option>
+                            <option value="SALES RETURN">SALES RETURN</option>
+                            <option value="CONFIDENTIAL">CONFIDENTIAL</option>
+                            <option value="">None</option>
+                        </select>
+                    </div>
+                    <div class="input-group flex-1">
+                        <label class="md-label">Ref / Invoice #</label>
+                        <input type="text" id="doc-ref-input" class="md-input" placeholder="e.g. INV-089" maxlength="30">
+                    </div>
+                </div>
+
+                <div class="input-group mb-4">
+                    <label class="md-label">Recipient Font Size</label>
+                    <select id="font-size-select" class="md-input">
+                        <option value="S">Small (Best for long addresses)</option>
+                        <option value="M" selected>Medium (Standard)</option>
+                        <option value="L">Large (Best for short names)</option>
+                    </select>
+                </div>
+
+                <div class="search-dropdown-container mb-4">
+                    <span class="material-symbols-rounded search-icon">search</span>
+                    <input type="text" id="client-search" class="md-input search-input" placeholder="Search Address Book..." autocomplete="off">
+                    <div id="search-results" class="search-results hidden"></div>
+                </div>
+
+                <div class="flex-between mb-2">
+                    <label class="md-label m-0">Print Address</label>
+                    
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <label style="font-size: 12px; color: var(--on-surface-variant); display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <input type="checkbox" id="smart-clear-cb" checked> Keep Layout
+                        </label>
+                        <button id="clear-btn" class="text-btn danger-text">
+                            <span class="material-symbols-rounded" style="font-size: 16px;">delete</span> Clear
+                        </button>
+                    </div>
+                </div>
+                
+                <div style="position: relative;">
+                    <textarea id="recipient-address" rows="5" class="md-input" style="text-transform: uppercase;" placeholder="Start typing an address or select from search above..."></textarea>
+                    <div id="inline-autocomplete" class="inline-autocomplete hidden"></div>
+                </div>
+            </div>
+
+            <div class="md-card">
+                <div class="card-title-wrap mb-4">
+                    <span class="material-symbols-rounded icon-primary">visibility</span>
+                    <h3 class="card-title">Live Preview</h3>
+                </div>
+                
+                <div class="envelope-preview-container">
+                    <div class="envelope-preview" id="preview-box">
+                        <div id="preview-safe-margin" style="position: absolute; top: 4%; bottom: 4%; left: 2%; right: 2%; border: 2px dashed rgba(255, 0, 0, 0.4); pointer-events: none; z-index: 10;"></div>
+                        
+                        <div id="preview-grid" class="preview-grid"></div>
+                        <div id="preview-doc-stamp" class="preview-doc-stamp"></div>
+                        
+                        <div id="preview-recipient" class="preview-text"></div>
+                        
+                        <div id="preview-return-cb" class="preview-return-cb">
+                            If undelivered, tick reason:<br>[ ] Shifted &nbsp; [ ] Locked &nbsp; [ ] Wrong Addr &nbsp; [ ] Refused
+                        </div>
+                        
+                        <div id="preview-doc-ref" class="preview-doc-ref"></div>
+                        
+                        <div class="preview-footer">
+                            <img id="preview-logo" class="preview-logo" src="" alt="Logo">
+                            <div id="preview-return" class="preview-return-text"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dpad-wrapper mt-4">
+                    <label class="md-label" style="text-align: center; display: block; margin-bottom: 12px;">Fine-Tune Alignment</label>
+                    <div class="dpad-grid">
+                        <button class="dpad-btn up" id="nudge-up"><span class="material-symbols-rounded">keyboard_arrow_up</span></button>
+                        <button class="dpad-btn left" id="nudge-left"><span class="material-symbols-rounded">keyboard_arrow_left</span></button>
+                        <div class="dpad-center" id="nudge-display">X: 40<br>Y: 35</div>
+                        <button class="dpad-btn right" id="nudge-right"><span class="material-symbols-rounded">keyboard_arrow_right</span></button>
+                        <button class="dpad-btn down" id="nudge-down"><span class="material-symbols-rounded">keyboard_arrow_down</span></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="md-card">
+                <div class="card-header" onclick="toggleCard('settings-content')">
+                    <div class="card-title-wrap">
+                        <span class="material-symbols-rounded icon-primary">aspect_ratio</span>
+                        <h3 class="card-title">Size & Print Options</h3>
+                    </div>
+                    <span class="material-symbols-rounded expand-icon" id="settings-content-icon">expand_more</span>
+                </div>
+                
+                <div class="card-body hidden" id="settings-content">
+                    <div class="input-group">
+                        <label class="md-label">Cover Format</label>
+                        <select id="envelope-size" class="md-input">
+                            <option value="dl">Standard DL (220 x 110 mm)</option>
+                            <option value="c5">A5 Cover (229 x 162 mm)</option>
+                            <option value="c4">A4 Cover (324 x 229 mm)</option>
+                            <option value="custom">Custom Size</option>
+                        </select>
+                    </div>
+                    
+                    <div id="custom-size-inputs" class="row-gap hidden mt-3">
+                        <div class="input-group flex-1">
+                            <label class="md-label">Width (mm)</label>
+                            <input type="number" id="custom-width" value="250" class="md-input">
+                        </div>
+                        <div class="input-group flex-1">
+                            <label class="md-label">Height (mm)</label>
+                            <input type="number" id="custom-height" value="150" class="md-input">
+                        </div>
+                    </div>
+                    
+                    <div class="list-tile mt-4">
+                        <div class="list-tile-text">
+                            <h4>Hardware Safe Margin</h4>
+                            <p>Shows red boundary preventing print cut-offs</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="enable-safe-margin" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div class="list-tile mt-3">
+                        <div class="list-tile-text">
+                            <h4>"Return Reason" Checkboxes</h4>
+                            <p>Prints Shifted/Locked/Refused boxes</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="enable-return-cb">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div class="list-tile mt-3">
+                        <div class="list-tile-text">
+                            <h4>Printer Calibration Grid</h4>
+                            <p>Prints a 1cm measurement grid for alignment</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="enable-grid">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="md-card">
+                <div class="card-header" onclick="toggleCard('sender-content')">
+                    <div class="card-title-wrap">
+                        <span class="material-symbols-rounded icon-primary">storefront</span>
+                        <h3 class="card-title">Sender Details (Footer)</h3>
+                    </div>
+                    <span class="material-symbols-rounded expand-icon" id="sender-content-icon">expand_more</span>
+                </div>
+                
+                <div class="card-body hidden" id="sender-content">
+                    <div class="flex-between mb-2">
+                        <label class="md-label m-0">Company Logo (.jpg/.png)</label>
+                        <button id="save-sender-btn" class="text-btn success-text">
+                            <span class="material-symbols-rounded" style="font-size: 16px;">save</span> Save Default
+                        </button>
+                    </div>
+                    <div class="file-upload-wrapper">
+                        <span class="material-symbols-rounded">cloud_upload</span>
+                        <input type="file" id="logo-upload" accept="image/png, image/jpeg" class="file-input">
+                    </div>
+                    
+                    <div class="input-group mt-4">
+                        <label class="md-label">Company Address</label>
+                        <textarea id="return-address" rows="3" class="md-input">YOUR COMPANY NAME&#10;123 Business Park Road&#10;Salem, TN 636001</textarea>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <footer class="app-footer">
+            <div class="footer-actions">
+                <button id="print-btn" class="md-btn primary-btn flex-1">
+                    <span class="material-symbols-rounded">Share</span>   
+                               Share Cover
+                </button>
+            </div>
+        </footer>
+
+        <div id="toast-container"></div>
+
+        <div id="client-modal" class="full-screen-modal">
+            <header class="modal-header">
+                <button class="back-btn" id="close-modal-btn"><span class="material-symbols-rounded">arrow_back</span></button>
+                <h2>Address Book</h2>
+            </header>
+            <div class="modal-content">
+
+                <div class="md-card">
+                    <h3 class="card-title mb-4">Add / Edit Client</h3>
+                    <input type="hidden" id="edit-client-id">
+                    
+                    <div class="input-group mb-3">
+                        <label class="md-label">Company / Name</label>
+                        <input type="text" id="new-client-name" class="md-input" placeholder="e.g. Ashok Textiles">
+                    </div>
+                    <div class="input-group mb-3">
+                        <label class="md-label">Phone (Optional)</label>
+                        <input type="tel" id="new-client-phone" class="md-input" placeholder="e.g. 919876543210">
+                    </div>
+                    <div class="input-group mb-4">
+                        <label class="md-label">Full Address</label>
+                        <textarea id="new-client-address" rows="3" class="md-input" placeholder="Address..."></textarea>
+                    </div>
+                    
+                    <button id="save-client-btn" class="md-btn primary-btn w-100">Save Client</button>
+                </div>
+
+                <div class="md-card">
+                    <div class="card-title-wrap mb-1">
+                        <span class="material-symbols-rounded icon-primary">security</span>
+                        <h3 class="card-title">Data Backup & Restore</h3>
+                    </div>
+                    <p class="md-helper mb-3" style="font-size: 13px; color: var(--on-surface-variant);">Securely download or restore your Address Book & Settings</p>
+                    <div class="flex-between gap-2">
+                        <button id="export-backup-btn" class="md-btn primary-btn flex-1">
+                            <span class="material-symbols-rounded">download</span> Backup
+                        </button>
+                        <label class="md-btn primary-btn flex-1 m-0" style="background: var(--surface); color: var(--primary); border: 1px solid var(--outline); cursor: pointer;">
+                            <span class="material-symbols-rounded">upload</span> Restore
+                            <input type="file" id="import-backup-file" accept=".json" class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="md-card">
+                    <div class="card-title-wrap mb-1">
+                        <span class="material-symbols-rounded icon-primary">note_add</span>
+                        <h3 class="card-title">Bulk Document Upload</h3>
+                    </div>
+                    <p class="md-helper mb-3" style="font-size: 13px; color: var(--on-surface-variant);">Select multiple .docx or .txt files to auto-extract addresses.</p>
+                    <label class="md-btn primary-btn w-100 m-0" style="background: var(--surface); color: var(--primary); border: 1px dashed var(--primary); cursor: pointer;">
+                        <span class="material-symbols-rounded">upload_file</span> Select Files
+                        <input type="file" id="bulk-doc-upload" accept=".docx, .txt" multiple class="hidden">
+                    </label>
+                </div>
+
+                <div class="md-card">
+                    <h3 class="card-title mb-3">Saved Clients</h3>
+                    <div id="client-list" class="client-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="ledger-modal" class="full-screen-modal">
+            <header class="modal-header">
+                <button class="back-btn" id="close-ledger-btn"><span class="material-symbols-rounded">arrow_back</span></button>
+                <h2>Dispatch Ledger</h2>
+            </header>
+            <div class="modal-content">
+                <div class="md-card p-0 mb-4">
+                    <div class="table-container">
+                        <table class="md-table" id="ledger-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Recipient</th>
+                                    <th style="text-align:right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ledger-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="flex-between">
+                    <button id="clear-ledger-btn" class="text-btn danger-text">Clear History</button>
+                    <button id="export-ledger-btn" class="md-btn primary-btn">
+                        <span class="material-symbols-rounded">download</span> Export CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div> <script src="script.js"></script>
+</body>
+</html>
